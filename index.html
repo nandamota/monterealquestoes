@@ -186,6 +186,14 @@ textarea{resize:vertical;line-height:1.6}
 .success-msg{background:var(--green-bg);border:1px solid var(--green-b);border-radius:var(--rs);padding:.45rem .75rem;font-size:12px;color:var(--green);margin-top:.45rem;display:none}
 
 /* CONFIG */
+.prov-card{border:1.5px solid var(--b2);border-radius:var(--r);padding:1rem;cursor:pointer;transition:all .15s;background:var(--s)}
+.prov-card:hover{border-color:var(--navy);background:var(--s2)}
+.prov-card.active{border-color:var(--navy);background:#f0f4ff;box-shadow:0 0 0 3px rgba(26,39,68,.08)}
+.prov-name{font-size:15px;font-weight:bold;color:var(--navy);margin-bottom:.35rem}
+.prov-tag{display:inline-block;font-size:10px;font-weight:bold;padding:2px 8px;border-radius:20px;margin-bottom:.4rem}
+.prov-tag.free{background:var(--green-bg);color:var(--green);border:1px solid var(--green-b)}
+.prov-tag.paid{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-b)}
+.prov-desc{font-size:12px;color:var(--t2);line-height:1.5}
 .api-row{display:flex;gap:.4rem;align-items:center}
 .api-row input{flex:1;font-family:monospace}
 .api-status{font-size:12px;margin-top:.35rem}
@@ -368,14 +376,47 @@ textarea{resize:vertical;line-height:1.6}
   </div>
 
   <div class="card">
-    <div class="card-title">🔑 Chave da API Anthropic</div>
-    <div class="api-row">
-      <input type="password" id="api-key-input" placeholder="sk-ant-..."/>
-      <button class="btn-sm" onclick="saveApiKey()">Salvar</button>
-      <button class="btn-sm" onclick="clearApiKey()">Limpar</button>
+    <div class="card-title">🔑 Provedor de IA — Chave da API</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.1rem">
+      <div id="prov-gemini" class="prov-card active" onclick="selectProvider('gemini')">
+        <div class="prov-name">🟢 Google Gemini</div>
+        <div class="prov-tag free">GRATUITO</div>
+        <div class="prov-desc">1.500 questões/dia grátis.<br>Não precisa de cartão.</div>
+      </div>
+      <div id="prov-anthropic" class="prov-card" onclick="selectProvider('anthropic')">
+        <div class="prov-name">🟣 Anthropic Claude</div>
+        <div class="prov-tag paid">PAGO</div>
+        <div class="prov-desc">~R$ 0,05 por questão.<br>Qualidade muito alta.</div>
+      </div>
     </div>
-    <div id="api-status" class="api-status"></div>
-    <p class="hint" style="margin-top:.6rem">Salva apenas no seu navegador. Obtenha em <a href="https://console.anthropic.com" target="_blank" style="color:var(--navy)">console.anthropic.com</a>.</p>
+
+    <!-- Gemini setup -->
+    <div id="setup-gemini">
+      <div style="background:var(--green-bg);border:1px solid var(--green-b);border-radius:var(--rs);padding:.75rem 1rem;margin-bottom:.9rem;font-size:13px;color:var(--green)">
+        ✅ <strong>100% gratuito.</strong> Acesse <a href="https://aistudio.google.com" target="_blank" style="color:var(--green);font-weight:bold">aistudio.google.com</a> → clique em <strong>"Get API Key"</strong> → <strong>"Create API key"</strong> → copie e cole abaixo.
+      </div>
+      <div class="api-row">
+        <input type="password" id="gemini-key-input" placeholder="AIza..."/>
+        <button class="btn-sm" onclick="saveGeminiKey()">Salvar</button>
+        <button class="btn-sm" onclick="clearGeminiKey()">Limpar</button>
+      </div>
+    </div>
+
+    <!-- Anthropic setup -->
+    <div id="setup-anthropic" style="display:none">
+      <div style="background:var(--blue-bg);border:1px solid var(--blue-b);border-radius:var(--rs);padding:.75rem 1rem;margin-bottom:.9rem;font-size:13px;color:var(--blue)">
+        💳 Acesse <a href="https://console.anthropic.com" target="_blank" style="color:var(--blue);font-weight:bold">console.anthropic.com</a> → <strong>API Keys → Create Key</strong>. Adicione créditos em <strong>Billing</strong> (US$ 5 dura meses).
+      </div>
+      <div class="api-row">
+        <input type="password" id="anthropic-key-input" placeholder="sk-ant-..."/>
+        <button class="btn-sm" onclick="saveAnthropicKey()">Salvar</button>
+        <button class="btn-sm" onclick="clearAnthropicKey()">Limpar</button>
+      </div>
+    </div>
+
+    <div id="api-status" class="api-status" style="margin-top:.5rem"></div>
+    <p class="hint" style="margin-top:.5rem">A chave fica salva apenas no seu navegador.</p>
   </div>
 
   <div class="card">
@@ -619,16 +660,82 @@ Resposta correta: [letra ou texto]
 Justificativa: [explicação da resposta correta]
 Análise dos distratores: [por que cada alternativa errada está errada — só para questões fechadas]`;
 
+// ── PROVIDER SELECTION ────────────────────────────────────
+function selectProvider(prov) {
+  localStorage.setItem('cmr_provider', prov);
+  document.querySelectorAll('.prov-card').forEach(c=>c.classList.remove('active'));
+  document.getElementById('prov-'+prov).classList.add('active');
+  document.getElementById('setup-gemini').style.display    = prov==='gemini'    ? 'block' : 'none';
+  document.getElementById('setup-anthropic').style.display = prov==='anthropic' ? 'block' : 'none';
+}
+function getProvider()  { return localStorage.getItem('cmr_provider')||'gemini'; }
+function getActiveKey() {
+  const p=getProvider();
+  return p==='gemini' ? localStorage.getItem('cmr_gemini_key')||'' : localStorage.getItem('cmr_apikey')||'';
+}
+
+function saveGeminiKey() {
+  const v=document.getElementById('gemini-key-input').value.trim();
+  if(!v.startsWith('AIza')){showApiStatus('Chave inválida. Deve começar com AIza...',false);return;}
+  localStorage.setItem('cmr_gemini_key',v); showApiStatus('✔ Chave Gemini salva.',true);
+}
+function clearGeminiKey() {
+  localStorage.removeItem('cmr_gemini_key');
+  document.getElementById('gemini-key-input').value=''; showApiStatus('Chave removida.',false);
+}
+function saveAnthropicKey() {
+  const v=document.getElementById('anthropic-key-input').value.trim();
+  if(!v.startsWith('sk-ant-')){showApiStatus('Chave inválida. Deve começar com sk-ant-',false);return;}
+  localStorage.setItem('cmr_apikey',v); showApiStatus('✔ Chave Anthropic salva.',true);
+}
+function clearAnthropicKey() {
+  localStorage.removeItem('cmr_apikey');
+  document.getElementById('anthropic-key-input').value=''; showApiStatus('Chave removida.',false);
+}
+
+// ── CALL AI ────────────────────────────────────────────────
+async function callAI(systemPrompt, userPrompt) {
+  const prov = getProvider();
+  const key  = getActiveKey();
+  if (!key) throw new Error(prov==='gemini'
+    ? 'Chave Gemini não configurada. Acesse Configurações → obtenha em aistudio.google.com.'
+    : 'Chave Anthropic não configurada. Acesse Configurações.');
+
+  if (prov === 'gemini') {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+      { method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          systemInstruction:{ parts:[{text:systemPrompt}] },
+          contents:[{parts:[{text:userPrompt}]}],
+          generationConfig:{ maxOutputTokens:1300, temperature:0.7 }
+        })
+      }
+    );
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  } else {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1300,
+        system:systemPrompt, messages:[{role:'user',content:userPrompt}] })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.content.map(b=>b.text||'').join('');
+  }
+}
+
 async function generateQuestion() {
-  const apiKey = localStorage.getItem('cmr_apikey')||'';
-  if (!apiKey) { showGenError('API Key não configurada. <a href="#" onclick="showPage(\'config\')" style="color:inherit;font-weight:bold">Configurar →</a>'); return; }
-  if (!S.db)   { showGenError('Firebase não configurado. <a href="#" onclick="showPage(\'config\')" style="color:inherit;font-weight:bold">Configurar →</a>'); return; }
+  if (!S.db) { showGenError('Firebase não configurado. <a href="#" onclick="showPage(\'config\')" style="color:inherit;font-weight:bold">Configurar →</a>'); return; }
   const conteudo = document.getElementById('g-conteudo').value.trim();
   if (!conteudo) { showGenError('Informe o conteúdo ou tema da questão.'); return; }
   document.getElementById('gen-error').style.display='none';
 
-  const textbase  = document.getElementById('g-textbase').value.trim();
-  const orient    = document.getElementById('g-orient').value.trim();
+  const textbase = document.getElementById('g-textbase').value.trim();
+  const orient   = document.getElementById('g-orient').value.trim();
   const btn = document.getElementById('gen-btn');
   btn.disabled=true; btn.textContent='⟳ Gerando...';
 
@@ -642,28 +749,20 @@ async function generateQuestion() {
     :S.tipo==='gta'?'APENAS questão aberta/dissertativa, sem alternativas.'
     :'Aberta ou múltipla escolha (5 alternativas), conforme o tema.';
 
-  document.getElementById('gen-result').innerHTML=`<div class="result-card"><div class="loading"><div class="spinner"></div><p>Gerando questão <strong>${S.diff.toLowerCase()}</strong> para o <strong>${S.serie}º ano</strong>…${examples.length?`<br><span style="font-size:12px;color:var(--purple)">🧠 Usando ${examples.length} exemplo(s) do banco</span>`:''}</p></div></div>`;
+  const prov = getProvider();
+  document.getElementById('gen-result').innerHTML=`<div class="result-card"><div class="loading"><div class="spinner"></div><p>Gerando com <strong>${prov==='gemini'?'Gemini (grátis)':'Claude'}</strong> — questão <strong>${S.diff.toLowerCase()}</strong> para o <strong>${S.serie}º ano</strong>…${examples.length?`<br><span style="font-size:12px;color:var(--purple)">🧠 Usando ${examples.length} exemplo(s) do banco</span>`:''}</p></div></div>`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514', max_tokens:1300,
-        system: BASE_SYSTEM + fewBlock,
-        messages:[{role:'user',content:`Elabore UMA questão de Ciências:
+    const userMsg = `Elabore UMA questão de Ciências:
 Tipo: ${S.tipo} — ${fmt}
 Série: ${S.serie}º ano
 Conteúdo: ${conteudo}
 Dificuldade: ${S.diff}
 ${textbase?'Texto base sugerido: '+textbase:'Crie um texto base contextualizado (cotidiano paraibano, notícia atual ou referência científica/bíblica).'}
 ${orient?'Orientações: '+orient:''}
-Conteúdos do ${S.serie}º ano: ${CONTEUDOS[S.serie]}`}]
-      })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    const text = data.content.map(b=>b.text||'').join('');
+Conteúdos do ${S.serie}º ano: ${CONTEUDOS[S.serie]}`;
+
+    const text = await callAI(BASE_SYSTEM + fewBlock, userMsg);
     S.lastResult = parseResult(text);
     S.lastResult.tema = conteudo;
     renderGenResult(S.lastResult, conteudo, examples.length);
@@ -1137,15 +1236,6 @@ function dlBlob(blob,type,filename) {
 // ═══════════════════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════════════════
-function saveApiKey() {
-  const v=document.getElementById('api-key-input').value.trim();
-  if(!v.startsWith('sk-ant-')){showApiStatus('Chave inválida. Deve começar com sk-ant-',false);return;}
-  localStorage.setItem('cmr_apikey',v); showApiStatus('✔ Chave salva.',true);
-}
-function clearApiKey() {
-  localStorage.removeItem('cmr_apikey');
-  document.getElementById('api-key-input').value=''; showApiStatus('Chave removida.',false);
-}
 function showApiStatus(m,ok){const e=document.getElementById('api-status');e.textContent=m;e.className='api-status '+(ok?'ok':'no');}
 
 function saveFirebaseConfig() {
@@ -1178,17 +1268,18 @@ function clearFirebaseConfig() {
   updateFbBanner();
 }
 function loadConfig() {
-  const k=localStorage.getItem('cmr_apikey')||'';
-  document.getElementById('api-key-input').value=k;
-  showApiStatus(k?'✔ Chave configurada.':'Nenhuma chave salva.',!!k);
+  const prov = getProvider();
+  selectProvider(prov);
+  const gk = localStorage.getItem('cmr_gemini_key')||'';
+  const ak = localStorage.getItem('cmr_apikey')||'';
+  if(gk) document.getElementById('gemini-key-input').value=gk;
+  if(ak) document.getElementById('anthropic-key-input').value=ak;
+  if(prov==='gemini')    showApiStatus(gk?'✔ Chave Gemini configurada.':'Nenhuma chave Gemini salva.',!!gk);
+  else showApiStatus(ak?'✔ Chave Anthropic configurada.':'Nenhuma chave Anthropic salva.',!!ak);
   const fc=localStorage.getItem('cmr_fb_config');
-  if(fc) {
+  if(fc){
     document.getElementById('fb-config-input').value=JSON.stringify(JSON.parse(fc),null,2);
-    if(S.db){
-      const cfg=JSON.parse(fc);
-      document.getElementById('fb-status').textContent='✔ Firebase conectado: '+cfg.projectId;
-      document.getElementById('fb-status').className='api-status ok';
-    }
+    if(S.db){const cfg=JSON.parse(fc);document.getElementById('fb-status').textContent='✔ Firebase conectado: '+cfg.projectId;document.getElementById('fb-status').className='api-status ok';}
   }
 }
 
