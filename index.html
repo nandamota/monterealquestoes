@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Monte Real — Gerador de Questões</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1a2744;--navy2:#243460;--gold:#b8860b;--gold2:#d4a017;--gold-pale:#fdf6e3;
+  --s:#fff;--s2:#f7f8fa;--s3:#eef0f5;
+  --b:#e2e5ec;--b2:#c8ccd6;--b3:#a0a8bc;
+  --t:#1a1f2e;--t2:#4a5068;--t3:#8890a8;
+  --green:#2d6a4f;--green-bg:#d8f3dc;--green-b:#74c69d;
+  --amber:#7d4f00;--amber-bg:#fff3cd;--amber-b:#e6a817;
+  --red:#7a1e1e;--red-bg:#fde8e8;--red-b:#e08080;
+  --blue:#1a3a6b;--blue-bg:#dbeafe;--blue-b:#93b4e0;
+  --purple:#4a1d6b;--purple-bg:#ede9fe;--purple-b:#a78bfa;
+  --r:10px;--rs:6px;--sh:0 2px 8px rgba(0,0,0,.08);
+}
+body{font-family:'Georgia',serif;background:var(--s2);color:var(--t);min-height:100vh}
+
+/* NAV */
+nav{background:var(--navy);position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.22)}
+.nav-inner{max-width:1020px;margin:0 auto;display:flex;align-items:center}
+.nav-brand{padding:.85rem 1.4rem;color:#fff;font-size:15px;font-weight:bold;border-right:1px solid rgba(255,255,255,.12);flex-shrink:0}
+.nav-brand span{color:var(--gold2)}
+.nav-tabs{display:flex;flex:1;overflow-x:auto}
+.nav-tab{padding:.85rem 1rem;color:rgba(255,255,255,.6);font-size:13px;cursor:pointer;border:none;background:none;font-family:'Georgia',serif;transition:all .15s;border-bottom:3px solid transparent;white-space:nowrap}
+.nav-tab:hover{color:rgba(255,255,255,.9);background:rgba(255,255,255,.06)}
+.nav-tab.active{color:var(--gold2);border-bottom-color:var(--gold2);background:rgba(255,255,255,.05)}
+.nav-tab .cnt{background:var(--gold);color:#fff;font-size:10px;padding:1px 5px;border-radius:20px;margin-left:4px;font-style:normal}
+
+/* LAYOUT */
+.page{display:none;max-width:1020px;margin:0 auto;padding:1.75rem 1rem 5rem}
+.page.active{display:block}
+.section-title{font-size:22px;color:var(--navy);margin-bottom:.2rem}
+.section-sub{font-size:13px;color:var(--t2);margin-bottom:1.4rem;font-style:italic}
+
+/* CARD */
+.card{background:var(--s);border:1px solid var(--b);border-radius:var(--r);padding:1.4rem;margin-bottom:.9rem;box-shadow:var(--sh)}
+.card-title{font-size:11px;font-weight:bold;color:var(--t2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.9rem;padding-bottom:.55rem;border-bottom:1px solid var(--b)}
+
+/* FORMS */
+label{font-size:11px;font-weight:bold;color:var(--t2);text-transform:uppercase;letter-spacing:.06em}
+input[type=text],input[type=password],textarea,select{font-family:'Georgia',serif;font-size:14px;padding:.55rem .7rem;border:1px solid var(--b);border-radius:var(--rs);background:var(--s);color:var(--t);width:100%;transition:border-color .15s}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--navy)}
+textarea{resize:vertical;line-height:1.6}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+.fg{display:flex;flex-direction:column;gap:.3rem}
+.fg.full{grid-column:1/-1}
+.hint{font-size:11px;color:var(--t3);margin-top:.2rem;font-style:italic}
+
+/* TOGGLES */
+.tg{display:flex;gap:.35rem;flex-wrap:wrap}
+.tb{padding:.38rem .9rem;border:1px solid var(--b2);border-radius:20px;background:var(--s);cursor:pointer;font-size:13px;color:var(--t2);font-family:'Georgia',serif;transition:all .15s}
+.tb:hover{border-color:var(--navy);color:var(--navy)}
+.tb.blue{background:var(--blue-bg);border-color:var(--blue-b);color:var(--blue);font-weight:bold}
+.tb.green{background:var(--green-bg);border-color:var(--green-b);color:var(--green);font-weight:bold}
+.tb.amber{background:var(--amber-bg);border-color:var(--amber-b);color:var(--amber);font-weight:bold}
+.tb.red{background:var(--red-bg);border-color:var(--red-b);color:var(--red);font-weight:bold}
+
+/* BUTTONS */
+.btn-primary{width:100%;padding:.8rem;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:15px;font-family:'Georgia',serif;cursor:pointer;transition:background .15s;letter-spacing:.02em}
+.btn-primary:hover:not(:disabled){background:var(--navy2)}
+.btn-primary:disabled{opacity:.42;cursor:not-allowed}
+.btn-sm{padding:.45rem .85rem;border:1px solid var(--b2);border-radius:var(--rs);background:var(--s);cursor:pointer;font-size:12px;font-family:'Georgia',serif;color:var(--t2);transition:all .15s;white-space:nowrap}
+.btn-sm:hover{background:var(--s2)}
+.btn-icon{width:30px;height:30px;border:1px solid var(--b);border-radius:var(--rs);background:var(--s);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.btn-icon:hover{background:var(--s2)}
+.btn-icon.danger:hover{background:var(--red-bg);border-color:var(--red-b)}
+.btn-icon.archive:hover{background:var(--amber-bg);border-color:var(--amber-b)}
+
+/* BADGES */
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:bold;border:1px solid;line-height:1.4}
+.bd-blue{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-b)}
+.bd-green{background:var(--green-bg);color:var(--green);border-color:var(--green-b)}
+.bd-amber{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-b)}
+.bd-red{background:var(--red-bg);color:var(--red);border-color:var(--red-b)}
+.bd-navy{background:#dde2f0;color:var(--navy);border-color:#aab2cc}
+.bd-purple{background:var(--purple-bg);color:var(--purple);border-color:var(--purple-b)}
+.bd-gray{background:#eee;color:#555;border-color:#ccc}
+
+/* RESULT */
+.result-card{background:var(--gold-pale);border:1px solid #e8d08a;border-radius:var(--r);padding:1.4rem;margin-top:.9rem}
+.result-meta{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.9rem}
+.rs{margin-bottom:1.1rem}
+.rs-label{font-size:10px;font-weight:bold;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem}
+.rb{font-size:15px;line-height:1.8;color:var(--t);white-space:pre-wrap}
+.result-actions{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.9rem}
+.btn-save{padding:.55rem 1.1rem;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:13px;font-family:'Georgia',serif;cursor:pointer}
+.btn-save:hover{background:var(--navy2)}
+.btn-save:disabled{background:var(--green);cursor:default}
+.btn-copy{padding:.55rem .9rem;background:var(--s);border:1px solid var(--b2);border-radius:var(--rs);color:var(--t2);font-size:12px;font-family:'Georgia',serif;cursor:pointer}
+.btn-copy:hover{background:var(--s2)}
+
+/* FEW-SHOT BAR */
+.fs-bar{background:var(--purple-bg);border:1px solid var(--purple-b);border-radius:var(--rs);padding:.55rem .9rem;margin-top:.7rem;font-size:12px;color:var(--purple);display:flex;align-items:center;gap:.4rem}
+
+/* LOADING */
+.loading{text-align:center;padding:2.5rem;color:var(--t2)}
+.spinner{width:26px;height:26px;border:3px solid var(--b);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto .65rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-box{background:var(--red-bg);border:1px solid var(--red-b);border-radius:var(--rs);padding:.7rem .9rem;font-size:13px;color:var(--red);margin-top:.5rem}
+
+/* STATS */
+.stats-row{display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1.2rem}
+.stat-card{background:var(--s);border:1px solid var(--b);border-radius:var(--rs);padding:.65rem .9rem;flex:1;min-width:80px;box-shadow:var(--sh);text-align:center}
+.stat-num{font-size:22px;font-weight:bold;color:var(--navy)}
+.stat-label{font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
+
+/* SEARCH + FILTERS */
+.search-wrap{position:relative;margin-bottom:.7rem}
+.search-input{width:100%;padding:.6rem .8rem .6rem 2.4rem;border:1px solid var(--b2);border-radius:var(--rs);font-size:14px;font-family:'Georgia',serif;background:var(--s);color:var(--t)}
+.search-input:focus{outline:none;border-color:var(--navy)}
+.search-icon{position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--t3);font-size:15px;pointer-events:none}
+.frow{display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.9rem;align-items:center}
+.fl{font-size:10px;color:var(--t3);font-style:italic}
+.fb{padding:.27rem .65rem;border:1px solid var(--b2);border-radius:20px;background:var(--s);cursor:pointer;font-size:11px;color:var(--t2);font-family:'Georgia',serif;transition:all .15s}
+.fb:hover{background:var(--s2)}
+.fb.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* HISTORY LAYOUT */
+.hist-layout{display:grid;grid-template-columns:1fr 300px;gap:1.1rem;align-items:start}
+
+/* SELECT BAR */
+.select-bar{position:fixed;bottom:0;left:0;right:0;z-index:300;background:var(--navy);color:#fff;padding:.9rem 1.5rem;display:none;align-items:center;gap:.75rem;flex-wrap:wrap;box-shadow:0 -4px 20px rgba(0,0,0,.25)}
+.select-bar.visible{display:flex}
+.select-count{font-size:15px;font-weight:bold;flex:1}
+.sb-btn{padding:.5rem 1rem;border:1px solid rgba(255,255,255,.3);border-radius:var(--rs);background:rgba(255,255,255,.1);color:#fff;font-size:13px;font-family:'Georgia',serif;cursor:pointer;transition:all .15s;white-space:nowrap}
+.sb-btn:hover{background:rgba(255,255,255,.22)}
+.sb-btn.danger{border-color:rgba(220,80,80,.6);background:rgba(220,80,80,.15)}
+.sb-btn.danger:hover{background:rgba(220,80,80,.3)}
+.sb-close{background:none;border:none;color:rgba(255,255,255,.6);font-size:18px;cursor:pointer;padding:.3rem;margin-left:auto}
+.sb-close:hover{color:#fff}
+
+/* QUESTION CARDS */
+.q-item{background:var(--s);border:1px solid var(--b);border-radius:var(--r);margin-bottom:.55rem;overflow:hidden;box-shadow:var(--sh);transition:border-color .15s}
+.q-item.selected{border-color:var(--blue-b);background:#f0f6ff}
+.q-item.archived-item{opacity:.7}
+.q-header{display:flex;align-items:center;gap:.45rem;padding:.75rem 1rem;cursor:pointer;background:var(--s2);flex-wrap:wrap}
+.q-header:hover{background:var(--s3)}
+.q-check{width:16px;height:16px;cursor:pointer;flex-shrink:0;accent-color:var(--navy)}
+.q-tema{flex:1;font-size:13px;color:var(--t);font-style:italic;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.q-date{font-size:10px;color:var(--t3);flex-shrink:0}
+.q-actions{display:flex;gap:.3rem;align-items:center;flex-shrink:0}
+.q-body{display:none;padding:1.1rem;border-top:1px solid var(--b)}
+.q-body.open{display:block}
+.q-section{margin-bottom:.9rem}
+.q-section-label{font-size:10px;font-weight:bold;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem}
+.q-text{font-size:14px;line-height:1.75;color:var(--t);white-space:pre-wrap}
+.q-footer{display:flex;gap:.4rem;margin-top:.75rem;flex-wrap:wrap}
+
+/* ORIGIN TAGS */
+.src-ai{font-size:10px;padding:1px 6px;border-radius:20px;background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-b);flex-shrink:0}
+.src-manual{font-size:10px;padding:1px 6px;border-radius:20px;background:var(--gold-pale);color:var(--gold);border:1px solid var(--gold2);flex-shrink:0}
+.src-archived{font-size:10px;padding:1px 6px;border-radius:20px;background:#eee;color:#666;border:1px solid #ccc;flex-shrink:0}
+
+/* EDIT MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:var(--s);border-radius:var(--r);width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.22)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 1.4rem;border-bottom:1px solid var(--b);position:sticky;top:0;background:var(--s);z-index:1}
+.modal-title{font-size:16px;font-weight:bold;color:var(--navy)}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--t3);line-height:1}
+.modal-close:hover{color:var(--t)}
+.modal-body{padding:1.4rem}
+.modal-footer{padding:1rem 1.4rem;border-top:1px solid var(--b);display:flex;gap:.5rem;justify-content:flex-end;position:sticky;bottom:0;background:var(--s)}
+.medit{display:flex;flex-direction:column;gap:.3rem;margin-bottom:.9rem}
+.medit label{font-size:11px;font-weight:bold;color:var(--t2);text-transform:uppercase;letter-spacing:.06em}
+.medit textarea{min-height:90px;font-size:13px}
+.medit input{font-size:13px}
+.btn-modal-save{padding:.6rem 1.2rem;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:14px;font-family:'Georgia',serif;cursor:pointer}
+.btn-modal-save:hover{background:var(--navy2)}
+.btn-modal-cancel{padding:.6rem 1rem;background:var(--s);border:1px solid var(--b2);border-radius:var(--rs);color:var(--t2);font-size:14px;font-family:'Georgia',serif;cursor:pointer}
+.btn-modal-cancel:hover{background:var(--s2)}
+
+/* MANUAL CARD */
+.manual-card{background:var(--s);border:1px solid var(--b);border-radius:var(--r);padding:1.2rem;box-shadow:var(--sh);position:sticky;top:74px}
+.mfg{margin-bottom:.7rem;display:flex;flex-direction:column;gap:.28rem}
+.mfg label{font-size:10px;font-weight:bold;color:var(--t2);text-transform:uppercase;letter-spacing:.06em}
+.mfg textarea{min-height:65px;font-size:13px}
+.mfg input,.mfg select{font-size:13px}
+.btn-add{width:100%;padding:.65rem;background:var(--gold);border:none;border-radius:var(--rs);color:#fff;font-size:14px;font-family:'Georgia',serif;cursor:pointer;margin-top:.4rem}
+.btn-add:hover{background:var(--gold2)}
+.success-msg{background:var(--green-bg);border:1px solid var(--green-b);border-radius:var(--rs);padding:.45rem .75rem;font-size:12px;color:var(--green);margin-top:.45rem;display:none}
+
+/* CONFIG */
+.api-row{display:flex;gap:.4rem;align-items:center}
+.api-row input{flex:1;font-family:monospace}
+.api-status{font-size:12px;margin-top:.35rem}
+.api-status.ok{color:var(--green)}.api-status.no{color:var(--red)}
+.fb-config-area{font-family:monospace;font-size:12px;min-height:120px;background:var(--s2)}
+.step-badge{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:bold;flex-shrink:0;margin-right:.5rem}
+.setup-step{display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.75rem;font-size:13px;color:var(--t2);line-height:1.6}
+
+/* EMPTY */
+.empty{text-align:center;padding:3rem 1rem;color:var(--t3);font-style:italic}
+.empty-icon{font-size:36px;margin-bottom:.65rem}
+
+/* FIREBASE STATUS BANNER */
+.fb-banner{padding:.6rem 1rem;font-size:13px;margin-bottom:.9rem;border-radius:var(--rs);display:none}
+.fb-banner.ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-b);display:block}
+.fb-banner.no{background:var(--red-bg);color:var(--red);border:1px solid var(--red-b);display:block}
+.fb-banner.loading{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-b);display:block}
+
+@media(max-width:720px){
+  .hist-layout{grid-template-columns:1fr}
+  .manual-card{position:static}
+  .form-grid{grid-template-columns:1fr}
+  .fg.full{grid-column:1}
+  .nav-brand{display:none}
+  .select-bar{padding:.75rem 1rem}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="nav-brand">⚜ <span>Monte Real</span></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showPage('gerador')">Gerar questão</button>
+      <button class="nav-tab" onclick="showPage('historico')">Histórico <em class="cnt" id="cnt-hist">0</em></button>
+      <button class="nav-tab" onclick="showPage('banco')">Banco <em class="cnt" id="cnt-banco">0</em></button>
+      <button class="nav-tab" onclick="showPage('config')">Configurações</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══ GERADOR ═══ -->
+<div class="page active" id="page-gerador">
+  <div id="fb-banner-gerador" class="fb-banner no">⚠ Firebase não configurado. <a href="#" onclick="showPage('config')" style="color:inherit;font-weight:bold;">Configurar agora →</a></div>
+  <h1 class="section-title">Gerar questão</h1>
+  <p class="section-sub">Ciências · Prof. Davi Gomes · 6º, 7º e 8º ano — aprende com o banco</p>
+  <div class="card">
+    <div class="card-title">Configurações</div>
+    <div style="margin-bottom:1rem">
+      <label style="display:block;margin-bottom:.4rem">Tipo de prova</label>
+      <div class="tg" id="tg-tipo">
+        <button class="tb blue" data-v="simulado" onclick="tgSelect('tg-tipo','blue',this)">Simulado <span style="font-size:10px;opacity:.7">/ M. escolha ENEM</span></button>
+        <button class="tb" data-v="parcial" onclick="tgSelect('tg-tipo','blue',this)">Parcial <span style="font-size:10px;opacity:.7">/ Aberta + fechada</span></button>
+        <button class="tb" data-v="gta" onclick="tgSelect('tg-tipo','blue',this)">GTA <span style="font-size:10px;opacity:.7">/ Questão aberta</span></button>
+      </div>
+    </div>
+    <div style="margin-bottom:1rem">
+      <label style="display:block;margin-bottom:.4rem">Série</label>
+      <div class="tg" id="tg-serie">
+        <button class="tb green" data-v="6" onclick="tgSelect('tg-serie','green',this)">6º ano</button>
+        <button class="tb" data-v="7" onclick="tgSelect('tg-serie','green',this)">7º ano</button>
+        <button class="tb" data-v="8" onclick="tgSelect('tg-serie','green',this)">8º ano</button>
+      </div>
+    </div>
+    <div style="margin-bottom:1rem">
+      <label style="display:block;margin-bottom:.4rem">Dificuldade</label>
+      <div class="tg" id="tg-diff">
+        <button class="tb green" data-v="Fácil" onclick="tgSelect('tg-diff','green',this)">Fácil</button>
+        <button class="tb" data-v="Médio" onclick="tgSelect('tg-diff','amber',this)">Médio</button>
+        <button class="tb" data-v="Difícil" onclick="tgSelect('tg-diff','red',this)">Difícil</button>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="fg full"><label>Conteúdo / Tema *</label><input type="text" id="g-conteudo" placeholder="Ex: Sistema digestório, Lei de Ohm, Placas tectônicas..."/><p class="hint">Seja específico para melhores resultados.</p></div>
+      <div class="fg full"><label>Texto base (opcional)</label><textarea id="g-textbase" rows="3" placeholder="Cole uma notícia, trecho bíblico ou situação do cotidiano. Deixe em branco para gerar automaticamente."></textarea></div>
+      <div class="fg full"><label>Orientações adicionais (opcional)</label><textarea id="g-orient" rows="2" placeholder="Ex: focar em João Pessoa, incluir referência bíblica..."></textarea></div>
+    </div>
+    <div id="fs-bar" style="display:none" class="fs-bar"><span>🧠</span><span id="fs-text"></span></div>
+    <button class="btn-primary" id="gen-btn" onclick="generateQuestion()" style="margin-top:.7rem">✦ Gerar questão</button>
+    <div id="gen-error" style="display:none" class="error-box"></div>
+  </div>
+  <div id="gen-result"></div>
+</div>
+
+<!-- ═══ HISTÓRICO ═══ -->
+<div class="page" id="page-historico">
+  <h1 class="section-title">Histórico de questões</h1>
+  <p class="section-sub">Gerencie, edite, selecione e exporte suas questões</p>
+  <div id="stats-hist" class="stats-row"></div>
+  <div class="hist-layout">
+    <div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" id="h-search" placeholder="Buscar por tema, conteúdo ou palavra-chave..." oninput="renderHistorico()"/>
+      </div>
+      <div class="frow" id="h-frow">
+        <span class="fl">Status:</span>
+        <button class="fb on" data-key="status" data-val="active" onclick="setHFilter(this)">Ativas</button>
+        <button class="fb" data-key="status" data-val="archived" onclick="setHFilter(this)">Arquivadas</button>
+        <button class="fb" data-key="status" data-val="all" onclick="setHFilter(this)">Todas</button>
+        &nbsp;<span class="fl">Série:</span>
+        <button class="fb on" data-key="serie" data-val="all" onclick="setHFilter(this)">Todas</button>
+        <button class="fb" data-key="serie" data-val="6" onclick="setHFilter(this)">6º</button>
+        <button class="fb" data-key="serie" data-val="7" onclick="setHFilter(this)">7º</button>
+        <button class="fb" data-key="serie" data-val="8" onclick="setHFilter(this)">8º</button>
+        &nbsp;<span class="fl">Tipo:</span>
+        <button class="fb on" data-key="tipo" data-val="all" onclick="setHFilter(this)">Todos</button>
+        <button class="fb" data-key="tipo" data-val="simulado" onclick="setHFilter(this)">Simulado</button>
+        <button class="fb" data-key="tipo" data-val="parcial" onclick="setHFilter(this)">Parcial</button>
+        <button class="fb" data-key="tipo" data-val="gta" onclick="setHFilter(this)">GTA</button>
+        &nbsp;<span class="fl">Dif.:</span>
+        <button class="fb on" data-key="diff" data-val="all" onclick="setHFilter(this)">Todas</button>
+        <button class="fb" data-key="diff" data-val="Fácil" onclick="setHFilter(this)">Fácil</button>
+        <button class="fb" data-key="diff" data-val="Médio" onclick="setHFilter(this)">Médio</button>
+        <button class="fb" data-key="diff" data-val="Difícil" onclick="setHFilter(this)">Difícil</button>
+        &nbsp;<span class="fl">Origem:</span>
+        <button class="fb on" data-key="origem" data-val="all" onclick="setHFilter(this)">Todas</button>
+        <button class="fb" data-key="origem" data-val="ai" onclick="setHFilter(this)">IA</button>
+        <button class="fb" data-key="origem" data-val="manual" onclick="setHFilter(this)">Manual</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.65rem">
+        <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:12px;color:var(--t2)">
+          <input type="checkbox" id="select-all-cb" onchange="toggleSelectAll()" style="accent-color:var(--navy);width:15px;height:15px"> Selecionar tudo visível
+        </label>
+        <span id="sel-count" style="font-size:12px;color:var(--t3);margin-left:.5rem"></span>
+      </div>
+      <div id="hist-list"></div>
+    </div>
+    <!-- QUICK ADD MANUAL -->
+    <div class="manual-card">
+      <div class="card-title">➕ Adicionar questão manual</div>
+      <p style="font-size:12px;color:var(--t2);margin-bottom:.75rem;font-style:italic">Insira questões de provas antigas para enriquecer o banco.</p>
+      <div class="mfg"><label>Tipo</label><select id="m-tipo"><option value="simulado">Simulado</option><option value="parcial">Parcial</option><option value="gta">GTA</option></select></div>
+      <div class="mfg"><label>Série</label><select id="m-serie"><option value="6">6º ano</option><option value="7">7º ano</option><option value="8">8º ano</option></select></div>
+      <div class="mfg"><label>Dificuldade</label><select id="m-diff"><option value="Fácil">Fácil</option><option value="Médio">Médio</option><option value="Difícil">Difícil</option></select></div>
+      <div class="mfg"><label>Tema *</label><input type="text" id="m-tema" placeholder="Ex: Célula e organelas"/></div>
+      <div class="mfg"><label>Texto da questão *</label><textarea id="m-questao" rows="5" placeholder="Cole o enunciado completo..."></textarea></div>
+      <div class="mfg"><label>Gabarito (opcional)</label><textarea id="m-gabarito" rows="3" placeholder="Resposta correta e justificativa..."></textarea></div>
+      <div class="mfg"><label>BNCC (opcional)</label><input type="text" id="m-bncc" placeholder="Ex: EF07CI11"/></div>
+      <div style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0">
+        <input type="checkbox" id="m-bank" style="accent-color:var(--navy)"> <label for="m-bank" style="font-size:12px;color:var(--t2);text-transform:none;letter-spacing:0">Adicionar ao banco (few-shot)</label>
+      </div>
+      <button class="btn-add" onclick="addManual()">⭐ Adicionar ao banco</button>
+      <div class="success-msg" id="manual-ok">✔ Questão adicionada!</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ BANCO ═══ -->
+<div class="page" id="page-banco">
+  <h1 class="section-title">Banco de exemplos</h1>
+  <p class="section-sub">Questões marcadas como referência — usadas pela IA para aprender seu estilo</p>
+  <div id="banco-list"></div>
+</div>
+
+<!-- ═══ CONFIG ═══ -->
+<div class="page" id="page-config">
+  <h1 class="section-title">Configurações</h1>
+  <p class="section-sub">Firebase, API Key e exportação</p>
+
+  <div class="card">
+    <div class="card-title">🔥 Configurar Firebase</div>
+    <div style="margin-bottom:1rem">
+      <div class="setup-step"><span class="step-badge">1</span>Acesse <a href="https://console.firebase.google.com" target="_blank" style="color:var(--navy);font-weight:bold">console.firebase.google.com</a> e crie um projeto.</div>
+      <div class="setup-step"><span class="step-badge">2</span>No projeto, vá em <strong>Firestore Database</strong> → criar banco → modo produção.</div>
+      <div class="setup-step"><span class="step-badge">3</span>Vá em <strong>Configurações do projeto</strong> → Seus apps → Adicionar app Web → copie o objeto <code>firebaseConfig</code>.</div>
+      <div class="setup-step"><span class="step-badge">4</span>Em <strong>Firestore → Regras</strong>, cole: <code>allow read, write: if true;</code> (para uso pessoal).</div>
+      <div class="setup-step"><span class="step-badge">5</span>Cole o JSON de configuração abaixo e salve.</div>
+    </div>
+    <div class="fg" style="margin-bottom:.75rem">
+      <label>Objeto firebaseConfig (JSON)</label>
+      <textarea id="fb-config-input" class="fb-config-area" rows="8" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'></textarea>
+    </div>
+    <div style="display:flex;gap:.5rem">
+      <button class="btn-sm" onclick="saveFirebaseConfig()" style="background:var(--navy);color:#fff;border-color:var(--navy)">💾 Salvar e conectar</button>
+      <button class="btn-sm" onclick="clearFirebaseConfig()">Desconectar</button>
+    </div>
+    <div id="fb-status" class="api-status" style="margin-top:.5rem"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔑 Chave da API Anthropic</div>
+    <div class="api-row">
+      <input type="password" id="api-key-input" placeholder="sk-ant-..."/>
+      <button class="btn-sm" onclick="saveApiKey()">Salvar</button>
+      <button class="btn-sm" onclick="clearApiKey()">Limpar</button>
+    </div>
+    <div id="api-status" class="api-status"></div>
+    <p class="hint" style="margin-top:.6rem">Salva apenas no seu navegador. Obtenha em <a href="https://console.anthropic.com" target="_blank" style="color:var(--navy)">console.anthropic.com</a>.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📤 Exportar / Importar banco completo</div>
+    <p style="font-size:13px;color:var(--t2);margin-bottom:.85rem">Backup do banco para usar em outro dispositivo ou como cópia de segurança.</p>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+      <button class="btn-sm" onclick="exportJSON()">⬇ Exportar JSON (backup)</button>
+      <button class="btn-sm" onclick="document.getElementById('import-file').click()">⬆ Importar JSON</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(event)"/>
+    </div>
+    <div id="config-msg" style="margin-top:.65rem;font-size:12px"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🧠 Como o sistema aprende</div>
+    <p style="font-size:14px;color:var(--t2);line-height:1.75">
+      Toda questão marcada como <strong>"no banco"</strong> (estrela dourada) vira um <strong>exemplo real</strong> enviado à IA antes de cada geração. O sistema busca automaticamente até 3 questões do mesmo tipo e série e as usa como modelo de estilo, vocabulário e formato.<br><br>
+      Quanto mais questões boas o professor salvar no banco, mais preciso e personalizado o sistema fica ao longo do tempo.
+    </p>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">✏️ Editar questão</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="medit"><label>Tema</label><input type="text" id="e-tema"/></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem;margin-bottom:.9rem">
+        <div class="medit" style="margin:0"><label>Tipo</label><select id="e-tipo"><option value="simulado">Simulado</option><option value="parcial">Parcial</option><option value="gta">GTA</option></select></div>
+        <div class="medit" style="margin:0"><label>Série</label><select id="e-serie"><option value="6">6º</option><option value="7">7º</option><option value="8">8º</option></select></div>
+        <div class="medit" style="margin:0"><label>Dificuldade</label><select id="e-diff"><option value="Fácil">Fácil</option><option value="Médio">Médio</option><option value="Difícil">Difícil</option></select></div>
+      </div>
+      <div class="medit"><label>Texto da questão</label><textarea id="e-questao" rows="10"></textarea></div>
+      <div class="medit"><label>Nível de dificuldade (justificativa)</label><textarea id="e-nivel" rows="2"></textarea></div>
+      <div class="medit"><label>Habilidade BNCC</label><textarea id="e-bncc" rows="2"></textarea></div>
+      <div class="medit"><label>Gabarito comentado</label><textarea id="e-gabarito" rows="5"></textarea></div>
+      <div style="display:flex;align-items:center;gap:.5rem;margin-top:.4rem">
+        <input type="checkbox" id="e-bank" style="accent-color:var(--navy);width:15px;height:15px">
+        <label for="e-bank" style="font-size:13px;color:var(--t2);cursor:pointer">Incluir no banco de exemplos (few-shot)</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-modal-save" onclick="saveEdit()">💾 Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- SELECTION BAR -->
+<div class="select-bar" id="select-bar">
+  <span class="select-count" id="sel-bar-count">0 selecionadas</span>
+  <button class="sb-btn" onclick="exportSelectedWord()">📄 Baixar Word</button>
+  <button class="sb-btn" onclick="exportSelectedPDF()">📋 Baixar PDF</button>
+  <button class="sb-btn" onclick="archiveSelected()">📦 Arquivar</button>
+  <button class="sb-btn danger" onclick="deleteSelected()">🗑 Excluir</button>
+  <button class="sb-close" onclick="clearSelection()">×</button>
+</div>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- docx -->
+<script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+const S = {
+  db: null,
+  questions: [],
+  selected: new Set(),
+  editingId: null,
+  currentPage: 'gerador',
+  hFilters: { status:'active', serie:'all', tipo:'all', diff:'all', origem:'all' },
+  tipo:'simulado', serie:'6', diff:'Fácil',
+  lastResult: null,
+};
+
+const TL = { simulado:'Simulado', parcial:'Parcial', gta:'GTA' };
+const DIFF_BD = d => d==='Fácil'?'bd-green':d==='Médio'?'bd-amber':'bd-red';
+
+// ═══════════════════════════════════════════════════════════
+// FIREBASE
+// ═══════════════════════════════════════════════════════════
+function initFirebase(config) {
+  try {
+    firebase.apps.forEach(app => app.delete());
+    firebase.initializeApp(config);
+    S.db = firebase.firestore();
+    listenQuestions();
+    return true;
+  } catch(e) {
+    console.error('Firebase init error:', e);
+    return false;
+  }
+}
+
+let unsubscribe = null;
+function listenQuestions() {
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+  if (!S.db) return;
+  unsubscribe = S.db.collection('questions')
+    .orderBy('createdAt','desc')
+    .onSnapshot(snap => {
+      S.questions = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+      updateCounts();
+      if (S.currentPage === 'historico') renderHistorico();
+      if (S.currentPage === 'banco') renderBanco();
+      updateFewshot();
+    }, err => console.error('Firestore error:', err));
+}
+
+async function dbAdd(data) {
+  const ref = await S.db.collection('questions').add({
+    ...data,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    status: 'active',
+  });
+  return ref.id;
+}
+async function dbUpdate(id, data) {
+  await S.db.collection('questions').doc(id).update({
+    ...data,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+}
+async function dbDelete(id) {
+  await S.db.collection('questions').doc(id).delete();
+}
+
+function getById(id) { return S.questions.find(q=>q.id===id); }
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function showPage(pid) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+pid).classList.add('active');
+  const order=['gerador','historico','banco','config'];
+  const tabs = document.querySelectorAll('.nav-tab');
+  tabs[order.indexOf(pid)]?.classList.add('active');
+  S.currentPage = pid;
+  if (pid==='historico') renderHistorico();
+  if (pid==='banco') renderBanco();
+  if (pid==='config') loadConfig();
+  updateFbBanner();
+}
+
+function updateFbBanner() {
+  const el = document.getElementById('fb-banner-gerador');
+  if (!el) return;
+  if (S.db) { el.style.display='none'; }
+  else { el.style.display='block'; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// COUNTS
+// ═══════════════════════════════════════════════════════════
+function updateCounts() {
+  const active = S.questions.filter(q=>q.status!=='archived');
+  const banco = S.questions.filter(q=>q.inBank);
+  document.getElementById('cnt-hist').textContent = active.length;
+  document.getElementById('cnt-banco').textContent = banco.length;
+}
+
+// ═══════════════════════════════════════════════════════════
+// TOGGLES
+// ═══════════════════════════════════════════════════════════
+function tgSelect(gid, cls, btn) {
+  document.getElementById(gid).querySelectorAll('.tb')
+    .forEach(b=>b.classList.remove('blue','green','amber','red'));
+  btn.classList.add(cls);
+  if(gid==='tg-tipo')  S.tipo = btn.dataset.v;
+  if(gid==='tg-serie') S.serie = btn.dataset.v;
+  if(gid==='tg-diff')  S.diff = btn.dataset.v;
+  updateFewshot();
+}
+
+// ═══════════════════════════════════════════════════════════
+// FEW-SHOT
+// ═══════════════════════════════════════════════════════════
+function getFewshot(tipo, serie, n=3) {
+  return S.questions
+    .filter(q=>q.inBank&&q.tipo===tipo&&q.serie===serie&&q.questao?.length>50)
+    .slice(0,n);
+}
+function updateFewshot() {
+  const ex = getFewshot(S.tipo, S.serie);
+  const el = document.getElementById('fs-bar');
+  if (ex.length>0) {
+    el.style.display='flex';
+    document.getElementById('fs-text').textContent=`Usando ${ex.length} questão(ões) do banco como referência de estilo.`;
+  } else { el.style.display='none'; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// GENERATOR
+// ═══════════════════════════════════════════════════════════
+const CONTEUDOS = {
+  '6':'Método científico, Óptica (espelhos, ilusões), Origem do universo (Big Bang e criacionismo), Distúrbios da visão, Célula e organelas (RE rugoso/liso, mitocôndria, ribossomo, Golgi, vacúolo, lisossomo, cloroplasto), Sistema solar (heliocêntrico vs geocêntrico, Galileu, Kepler), Movimentos da Terra (rotação e translação), Propriedades da matéria (densidade, tensão superficial, empuxo, solubilidade), Misturas e separação (filtração, decantação, evaporação, peneiração, imantação), Camadas da Terra (crosta, manto, núcleo), Minerais e minérios, Tipos de rocha (ígneas, sedimentares, metamórficas), Fósseis, Sistemas terrestres (litosfera, hidrosfera, atmosfera, biosfera).',
+  '7':'Deriva continental (Wegener, Pangeia), Placas tectônicas, Terremotos (Escala Richter), Vulcões (magma x lava), Composição química dos seres vivos (CHNOPS), Moléculas orgânicas (carboidratos, lipídios, proteínas, ácidos nucleicos DNA/RNA), Reprodução assexuada e sexuada, Desenvolvimento embrionário (ovíparos, vivíparos, ovovivíparos), Nomenclatura científica — sistema binomial de Lineu, Taxonomia, Biosfera e ecossistemas.',
+  '8':'Ciência e método científico (Aristóteles, padres cientistas: Mendel, Lemaître), Dignidade humana e pessoa humana (Homo sapiens, teologia do corpo — Catecismo §356), Nutrição e sistema digestório, Sistema urinário, Respiração e sistema respiratório, Circulação sanguínea, Sistema cardiovascular, Sistema linfático, Excreção, Sistema endócrino (insulina, adrenalina, tiroxina), Sistema imunológico (linfócitos, anticorpos, vacinas), Reprodução humana e bioética da sexualidade, Sistema locomotor, Sistema muscular, Sistema nervoso (neurônios, SNC e SNP), Sentidos humanos, Fatores climáticos e intervenção humana, Energia e eletricidade, 1ª Lei de Ohm (V=R·I), Circuitos elétricos (série e paralelo), Usinas elétricas e impacto ambiental.'
+};
+
+const BASE_SYSTEM = `Você é o Prof. Davi Gomes de Brito Carneiro, professor de Ciências do Colégio Monte Real, escola de ensino personalizado e tradição católica em João Pessoa, Paraíba. Especialista em Educação Ambiental e Sustentabilidade (IFPB). Leciona para alunos de 6º, 7º e 8º ano com bom nível acadêmico.
+
+ESTILO DE ELABORAÇÃO:
+- Sempre use texto base com fonte de referência (notícia atual, trecho bíblico, cotidiano paraibano, livro didático como MENDES, F. et al. Ciências. Unitrinus, 2022; AMABIS, J.M.; MARTHO, G.R. Biologia das Células. Moderna, 2018)
+- Use personagens com nomes nordestinos: Felipe, Gustavo, Manuela, Andolfo, Afonso, Mariana, João, Ana, Pedro, Beatriz
+- Contextualize com a realidade paraibana: Praia do Jacaré, João Pessoa, Santa Rita, Tambaú, Bessa, feiras livres, culinária regional
+- Inclua referências bíblicas ou da fé católica de forma natural e pedagógica quando pertinente
+- Linguagem clara, científica e acessível a jovens de 11-14 anos com bom nível acadêmico
+
+FORMATOS:
+- Simulado: APENAS múltipla escolha, 5 alternativas (a–e), estilo ENEM
+- GTA: APENAS questão aberta/dissertativa, sem alternativas
+- Parcial: aberta ou múltipla escolha conforme o tema
+
+FORMATO DE SAÍDA OBRIGATÓRIO:
+---QUESTÃO---
+[texto base com fonte + enunciado + alternativas se fechada]
+
+---NÍVEL DE DIFICULDADE---
+[Fácil / Médio / Difícil — justificativa em 1 frase]
+
+---HABILIDADE BNCC---
+Código: [ex: EF07CI11]
+Descrição: [descrição completa]
+
+---GABARITO COMENTADO---
+Resposta correta: [letra ou texto]
+Justificativa: [explicação da resposta correta]
+Análise dos distratores: [por que cada alternativa errada está errada — só para questões fechadas]`;
+
+async function generateQuestion() {
+  const apiKey = localStorage.getItem('cmr_apikey')||'';
+  if (!apiKey) { showGenError('API Key não configurada. <a href="#" onclick="showPage(\'config\')" style="color:inherit;font-weight:bold">Configurar →</a>'); return; }
+  if (!S.db)   { showGenError('Firebase não configurado. <a href="#" onclick="showPage(\'config\')" style="color:inherit;font-weight:bold">Configurar →</a>'); return; }
+  const conteudo = document.getElementById('g-conteudo').value.trim();
+  if (!conteudo) { showGenError('Informe o conteúdo ou tema da questão.'); return; }
+  document.getElementById('gen-error').style.display='none';
+
+  const textbase  = document.getElementById('g-textbase').value.trim();
+  const orient    = document.getElementById('g-orient').value.trim();
+  const btn = document.getElementById('gen-btn');
+  btn.disabled=true; btn.textContent='⟳ Gerando...';
+
+  const examples = getFewshot(S.tipo, S.serie, 3);
+  const fewBlock = examples.length > 0
+    ? '\n\nEXEMPLOS REAIS DO PROFESSOR (NÃO repita — apenas aprenda o padrão de estilo, tom e formato):\n\n'
+      + examples.map((q,i)=>`— Exemplo ${i+1} (${q.tema}):\n${q.questao}${q.gabarito?'\nGabarito: '+q.gabarito:''}`).join('\n\n---\n\n')
+    : '';
+
+  const fmt = S.tipo==='simulado'?'APENAS múltipla escolha com 5 alternativas (a–e), estilo ENEM.'
+    :S.tipo==='gta'?'APENAS questão aberta/dissertativa, sem alternativas.'
+    :'Aberta ou múltipla escolha (5 alternativas), conforme o tema.';
+
+  document.getElementById('gen-result').innerHTML=`<div class="result-card"><div class="loading"><div class="spinner"></div><p>Gerando questão <strong>${S.diff.toLowerCase()}</strong> para o <strong>${S.serie}º ano</strong>…${examples.length?`<br><span style="font-size:12px;color:var(--purple)">🧠 Usando ${examples.length} exemplo(s) do banco</span>`:''}</p></div></div>`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:1300,
+        system: BASE_SYSTEM + fewBlock,
+        messages:[{role:'user',content:`Elabore UMA questão de Ciências:
+Tipo: ${S.tipo} — ${fmt}
+Série: ${S.serie}º ano
+Conteúdo: ${conteudo}
+Dificuldade: ${S.diff}
+${textbase?'Texto base sugerido: '+textbase:'Crie um texto base contextualizado (cotidiano paraibano, notícia atual ou referência científica/bíblica).'}
+${orient?'Orientações: '+orient:''}
+Conteúdos do ${S.serie}º ano: ${CONTEUDOS[S.serie]}`}]
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const text = data.content.map(b=>b.text||'').join('');
+    S.lastResult = parseResult(text);
+    S.lastResult.tema = conteudo;
+    renderGenResult(S.lastResult, conteudo, examples.length);
+  } catch(e) {
+    document.getElementById('gen-result').innerHTML='';
+    showGenError('Erro ao gerar: '+e.message);
+  }
+  btn.disabled=false; btn.textContent='✦ Gerar questão';
+}
+
+function showGenError(html) {
+  const e=document.getElementById('gen-error'); e.innerHTML=html; e.style.display='block';
+}
+
+function parseResult(text) {
+  const sec = (marker) => {
+    const s=text.indexOf(marker); if(s===-1) return '';
+    const e=text.indexOf('---',s+marker.length);
+    return (e===-1?text.slice(s+marker.length):text.slice(s+marker.length,e)).trim();
+  };
+  return {
+    questao:  sec('---QUESTÃO---') || text,
+    nivel:    sec('---NÍVEL DE DIFICULDADE---'),
+    bncc:     sec('---HABILIDADE BNCC---'),
+    gabarito: sec('---GABARITO COMENTADO---'),
+  };
+}
+
+function renderGenResult(r, tema, exN) {
+  const db2 = S.diff==='Fácil'?'bd-green':S.diff==='Médio'?'bd-amber':'bd-red';
+  document.getElementById('gen-result').innerHTML=`
+    <div class="result-card">
+      <div class="result-meta">
+        <span class="badge bd-blue">${TL[S.tipo]}</span>
+        <span class="badge bd-navy">${S.serie}º ano</span>
+        <span class="badge ${db2}">${S.diff}</span>
+        <span class="badge bd-navy" style="opacity:.7">${esc(tema)}</span>
+        ${exN>0?`<span class="badge bd-purple">🧠 ${exN} ex. do banco</span>`:''}
+      </div>
+      <div class="rs"><div class="rs-label">Questão</div><div class="rb">${esc(r.questao)}</div></div>
+      ${r.nivel?`<div class="rs"><div class="rs-label">Nível</div><div class="rb" style="font-size:13px">${esc(r.nivel)}</div></div>`:''}
+      ${r.bncc?`<div class="rs"><div class="rs-label">BNCC</div><div class="rb" style="font-size:13px">${esc(r.bncc)}</div></div>`:''}
+      ${r.gabarito?`<div class="rs"><div class="rs-label">Gabarito comentado</div><div class="rb" style="font-size:13px">${esc(r.gabarito)}</div></div>`:''}
+      <div class="result-actions">
+        <button class="btn-save" id="save-gen-btn" onclick="saveGenerated()">⭐ Salvar no banco</button>
+        <button class="btn-copy" onclick="copyGenResult()">Copiar tudo</button>
+        <button class="btn-copy" onclick="exportOneWord()">📄 Word</button>
+        <button class="btn-copy" onclick="exportOnePDF()">📋 PDF</button>
+      </div>
+    </div>`;
+}
+
+async function saveGenerated() {
+  if (!S.lastResult||!S.db) return;
+  const data = {
+    ...S.lastResult,
+    tipo: S.tipo, serie: S.serie, diff: S.diff,
+    tema: S.lastResult.tema || document.getElementById('g-conteudo').value.trim(),
+    origem: 'ai', inBank: true, status: 'active',
+  };
+  await dbAdd(data);
+  const btn=document.getElementById('save-gen-btn');
+  if(btn){btn.textContent='✔ Salvo!';btn.disabled=true;}
+}
+
+function copyGenResult() {
+  if(!S.lastResult) return;
+  const r=S.lastResult;
+  navigator.clipboard.writeText([r.questao,r.bncc?'BNCC: '+r.bncc:'',r.gabarito?'GABARITO:\n'+r.gabarito:''].filter(Boolean).join('\n\n---\n\n'));
+}
+function exportOneWord() { if(S.lastResult) exportWord([{...S.lastResult,tipo:S.tipo,serie:S.serie,diff:S.diff,tema:S.lastResult.tema}]); }
+function exportOnePDF()  { if(S.lastResult) exportPDF([{...S.lastResult,tipo:S.tipo,serie:S.serie,diff:S.diff,tema:S.lastResult.tema}]); }
+
+// ═══════════════════════════════════════════════════════════
+// HISTÓRICO
+// ═══════════════════════════════════════════════════════════
+function setHFilter(btn) {
+  const key=btn.dataset.key, val=btn.dataset.val;
+  S.hFilters[key]=val;
+  document.querySelectorAll(`#h-frow .fb[data-key="${key}"]`).forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderHistorico();
+}
+
+function getFiltered() {
+  const f=S.hFilters;
+  const s=(document.getElementById('h-search')?.value||'').toLowerCase();
+  return S.questions.filter(q=>{
+    if(f.status!=='all'&&q.status!==f.status) return false;
+    if(f.serie!=='all'&&q.serie!==f.serie) return false;
+    if(f.tipo!=='all'&&q.tipo!==f.tipo) return false;
+    if(f.diff!=='all'&&q.diff!==f.diff) return false;
+    if(f.origem!=='all'&&q.origem!==f.origem) return false;
+    if(s){const h=(q.tema+q.questao+q.bncc+q.gabarito).toLowerCase();if(!h.includes(s))return false;}
+    return true;
+  });
+}
+
+function renderHistorico() {
+  if(!S.db){document.getElementById('hist-list').innerHTML='<div class="empty"><div class="empty-icon">🔥</div>Firebase não configurado. <a href="#" onclick="showPage(\'config\')">Configurar →</a></div>';return;}
+
+  const all=S.questions;
+  const active=all.filter(q=>q.status!=='archived');
+  const arch=all.filter(q=>q.status==='archived');
+  const manual=all.filter(q=>q.origem==='manual');
+  document.getElementById('stats-hist').innerHTML=`
+    <div class="stat-card"><div class="stat-num">${all.length}</div><div class="stat-label">Total</div></div>
+    <div class="stat-card"><div class="stat-num">${active.length}</div><div class="stat-label">Ativas</div></div>
+    <div class="stat-card"><div class="stat-num">${arch.length}</div><div class="stat-label">Arquivadas</div></div>
+    <div class="stat-card"><div class="stat-num">${manual.length}</div><div class="stat-label">Manuais</div></div>
+    <div class="stat-card"><div class="stat-num">${all.filter(q=>q.serie==='6').length}</div><div class="stat-label">6º ano</div></div>
+    <div class="stat-card"><div class="stat-num">${all.filter(q=>q.serie==='7').length}</div><div class="stat-label">7º ano</div></div>
+    <div class="stat-card"><div class="stat-num">${all.filter(q=>q.serie==='8').length}</div><div class="stat-label">8º ano</div></div>`;
+
+  const filtered=getFiltered();
+  const sc=document.getElementById('sel-count');
+  sc.textContent=S.selected.size>0?`${S.selected.size} selecionada(s)`:'';
+
+  if(!filtered.length){
+    document.getElementById('hist-list').innerHTML=`<div class="empty"><div class="empty-icon">📚</div>${all.length===0?'Nenhuma questão ainda. Gere sua primeira questão!':'Nenhuma questão encontrada com esses filtros.'}</div>`;
+    return;
+  }
+
+  document.getElementById('hist-list').innerHTML=filtered.map(q=>renderQCard(q)).join('');
+}
+
+function renderQCard(q) {
+  const sel = S.selected.has(q.id);
+  const isArch = q.status==='archived';
+  const db2 = DIFF_BD(q.diff);
+  const srcCls = isArch?'src-archived':q.origem==='manual'?'src-manual':'src-ai';
+  const srcLbl = isArch?'arquivada':q.origem==='manual'?'manual':'IA';
+  return `
+    <div class="q-item${sel?' selected':''}${isArch?' archived-item':''}" id="qcard-${q.id}">
+      <div class="q-header">
+        <input type="checkbox" class="q-check" ${sel?'checked':''} onchange="toggleSel('${q.id}')" onclick="event.stopPropagation()"/>
+        <span class="badge bd-navy">${q.serie}º</span>
+        <span class="badge bd-blue">${TL[q.tipo]||q.tipo}</span>
+        <span class="badge ${db2}">${q.diff}</span>
+        ${q.inBank?'<span style="font-size:14px" title="No banco de exemplos">⭐</span>':''}
+        <span class="${srcCls}">${srcLbl}</span>
+        <span class="q-tema" onclick="toggleQBody('${q.id}')">${esc(q.tema||'(sem tema)')}</span>
+        <span class="q-date">${q.date||''}</span>
+        <div class="q-actions" onclick="event.stopPropagation()">
+          <button class="btn-icon" title="Editar" onclick="openEdit('${q.id}')">✏️</button>
+          <button class="btn-icon" title="${q.inBank?'Remover do banco':'Adicionar ao banco'}" onclick="toggleBank('${q.id}')" style="${q.inBank?'background:var(--gold-pale);border-color:var(--gold2)':''}">⭐</button>
+          ${isArch
+            ? `<button class="btn-icon archive" title="Restaurar" onclick="unarchiveQ('${q.id}')">♻️</button>`
+            : `<button class="btn-icon archive" title="Arquivar" onclick="archiveQ('${q.id}')">📦</button>`
+          }
+          <button class="btn-icon danger" title="Excluir" onclick="deleteQ('${q.id}')">🗑</button>
+        </div>
+      </div>
+      <div class="q-body" id="qbody-${q.id}">
+        ${q.questao?`<div class="q-section"><div class="q-section-label">Questão</div><div class="q-text">${esc(q.questao)}</div></div>`:''}
+        ${q.nivel?`<div class="q-section"><div class="q-section-label">Nível</div><div class="q-text" style="font-size:13px">${esc(q.nivel)}</div></div>`:''}
+        ${q.bncc?`<div class="q-section"><div class="q-section-label">BNCC</div><div class="q-text" style="font-size:13px">${esc(q.bncc)}</div></div>`:''}
+        ${q.gabarito?`<div class="q-section"><div class="q-section-label">Gabarito</div><div class="q-text" style="font-size:13px">${esc(q.gabarito)}</div></div>`:''}
+        <div class="q-footer">
+          <button class="btn-sm" onclick="exportWord([getById('${q.id}')])">📄 Word</button>
+          <button class="btn-sm" onclick="exportPDF([getById('${q.id}')])">📋 PDF</button>
+          <button class="btn-sm" onclick="copyQ('${q.id}')">Copiar</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function toggleQBody(id) {
+  document.getElementById('qbody-'+id)?.classList.toggle('open');
+}
+
+// SELECTION
+function toggleSel(id) {
+  if(S.selected.has(id)) S.selected.delete(id);
+  else S.selected.add(id);
+  updateSelBar();
+  const card=document.getElementById('qcard-'+id);
+  const cb=card?.querySelector('.q-check');
+  if(card) card.classList.toggle('selected', S.selected.has(id));
+  if(cb) cb.checked=S.selected.has(id);
+  document.getElementById('sel-count').textContent=S.selected.size>0?`${S.selected.size} selecionada(s)`:'';
+}
+function toggleSelectAll() {
+  const cb=document.getElementById('select-all-cb');
+  const filtered=getFiltered();
+  if(cb.checked) filtered.forEach(q=>S.selected.add(q.id));
+  else filtered.forEach(q=>S.selected.delete(q.id));
+  updateSelBar();
+  renderHistorico();
+}
+function clearSelection() {
+  S.selected.clear(); updateSelBar(); renderHistorico();
+  const cb=document.getElementById('select-all-cb');
+  if(cb) cb.checked=false;
+}
+function updateSelBar() {
+  const bar=document.getElementById('select-bar');
+  const n=S.selected.size;
+  if(n>0){bar.classList.add('visible');document.getElementById('sel-bar-count').textContent=`${n} questão(ões) selecionada(s)`;}
+  else bar.classList.remove('visible');
+}
+
+// INDIVIDUAL ACTIONS
+async function archiveQ(id) {
+  if(!confirm('Arquivar esta questão?')) return;
+  await dbUpdate(id,{status:'archived'});
+}
+async function unarchiveQ(id) {
+  await dbUpdate(id,{status:'active'});
+}
+async function deleteQ(id) {
+  if(!confirm('Excluir permanentemente esta questão? Esta ação não pode ser desfeita.')) return;
+  S.selected.delete(id);
+  await dbDelete(id);
+  updateSelBar();
+}
+async function toggleBank(id) {
+  const q=getById(id); if(!q) return;
+  await dbUpdate(id,{inBank:!q.inBank});
+}
+function copyQ(id) {
+  const q=getById(id); if(!q) return;
+  navigator.clipboard.writeText([q.questao,q.bncc?'BNCC: '+q.bncc:'',q.gabarito?'GABARITO:\n'+q.gabarito:''].filter(Boolean).join('\n\n---\n\n'));
+}
+
+// BULK ACTIONS
+async function archiveSelected() {
+  if(!S.selected.size) return;
+  if(!confirm(`Arquivar ${S.selected.size} questão(ões)?`)) return;
+  const ids=[...S.selected];
+  await Promise.all(ids.map(id=>dbUpdate(id,{status:'archived'})));
+  clearSelection();
+}
+async function deleteSelected() {
+  if(!S.selected.size) return;
+  if(!confirm(`Excluir permanentemente ${S.selected.size} questão(ões)? Esta ação não pode ser desfeita.`)) return;
+  const ids=[...S.selected];
+  await Promise.all(ids.map(id=>dbDelete(id)));
+  clearSelection();
+}
+function exportSelectedWord() {
+  const qs=[...S.selected].map(id=>getById(id)).filter(Boolean);
+  if(!qs.length) return;
+  exportWord(qs);
+}
+function exportSelectedPDF() {
+  const qs=[...S.selected].map(id=>getById(id)).filter(Boolean);
+  if(!qs.length) return;
+  exportPDF(qs);
+}
+
+// ═══════════════════════════════════════════════════════════
+// EDIT MODAL
+// ═══════════════════════════════════════════════════════════
+function openEdit(id) {
+  const q=getById(id); if(!q) return;
+  S.editingId=id;
+  document.getElementById('e-tema').value    = q.tema||'';
+  document.getElementById('e-tipo').value    = q.tipo||'simulado';
+  document.getElementById('e-serie').value   = q.serie||'6';
+  document.getElementById('e-diff').value    = q.diff||'Fácil';
+  document.getElementById('e-questao').value = q.questao||'';
+  document.getElementById('e-nivel').value   = q.nivel||'';
+  document.getElementById('e-bncc').value    = q.bncc||'';
+  document.getElementById('e-gabarito').value= q.gabarito||'';
+  document.getElementById('e-bank').checked  = !!q.inBank;
+  document.getElementById('edit-modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+  S.editingId=null;
+}
+function closeModalOutside(e) {
+  if(e.target.id==='edit-modal') closeModal();
+}
+async function saveEdit() {
+  if(!S.editingId) return;
+  const updates = {
+    tema:     document.getElementById('e-tema').value.trim(),
+    tipo:     document.getElementById('e-tipo').value,
+    serie:    document.getElementById('e-serie').value,
+    diff:     document.getElementById('e-diff').value,
+    questao:  document.getElementById('e-questao').value.trim(),
+    nivel:    document.getElementById('e-nivel').value.trim(),
+    bncc:     document.getElementById('e-bncc').value.trim(),
+    gabarito: document.getElementById('e-gabarito').value.trim(),
+    inBank:   document.getElementById('e-bank').checked,
+  };
+  await dbUpdate(S.editingId, updates);
+  closeModal();
+}
+
+// ═══════════════════════════════════════════════════════════
+// BANCO PAGE
+// ═══════════════════════════════════════════════════════════
+function renderBanco() {
+  const bancoQs = S.questions.filter(q=>q.inBank&&q.status!=='archived');
+  const el = document.getElementById('banco-list');
+  if(!bancoQs.length){el.innerHTML='<div class="empty"><div class="empty-icon">⭐</div>Nenhuma questão no banco ainda.<br>Marque questões com ⭐ no Histórico ou ao gerar.</div>';return;}
+  const db2 = d=>DIFF_BD(d);
+  el.innerHTML=bancoQs.map(q=>`
+    <div class="q-item">
+      <div class="q-header" onclick="toggleQBody('b${q.id}')">
+        <span class="badge bd-navy">${q.serie}º</span>
+        <span class="badge bd-blue">${TL[q.tipo]||q.tipo}</span>
+        <span class="badge ${db2(q.diff)}">${q.diff}</span>
+        <span class="q-tema">${esc(q.tema)}</span>
+        <span class="q-date">${q.date||''}</span>
+        <span class="${q.origem==='manual'?'src-manual':'src-ai'}">${q.origem==='manual'?'manual':'IA'}</span>
+      </div>
+      <div class="q-body" id="qbody-b${q.id}">
+        <div class="q-section"><div class="q-section-label">Questão</div><div class="q-text">${esc(q.questao||'')}</div></div>
+        ${q.gabarito?`<div class="q-section"><div class="q-section-label">Gabarito</div><div class="q-text" style="font-size:13px">${esc(q.gabarito)}</div></div>`:''}
+        <div class="q-footer">
+          <button class="btn-sm" onclick="toggleBank('${q.id}');renderBanco()">⭐ Remover do banco</button>
+          <button class="btn-sm" onclick="openEdit('${q.id}')">✏️ Editar</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// MANUAL ADD
+// ═══════════════════════════════════════════════════════════
+async function addManual() {
+  const tema   = document.getElementById('m-tema').value.trim();
+  const questao= document.getElementById('m-questao').value.trim();
+  if(!tema||!questao){alert('Preencha ao menos o Tema e o Texto da questão.');return;}
+  if(!S.db){alert('Firebase não configurado. Configure primeiro.');return;}
+  const data = {
+    tipo:    document.getElementById('m-tipo').value,
+    serie:   document.getElementById('m-serie').value,
+    diff:    document.getElementById('m-diff').value,
+    tema, questao,
+    gabarito:document.getElementById('m-gabarito').value.trim(),
+    bncc:    document.getElementById('m-bncc').value.trim(),
+    inBank:  document.getElementById('m-bank').checked,
+    origem:  'manual', status:'active',
+    date:    new Date().toLocaleDateString('pt-BR'),
+  };
+  await dbAdd(data);
+  ['m-tema','m-questao','m-gabarito','m-bncc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('m-bank').checked=false;
+  const msg=document.getElementById('manual-ok');
+  msg.style.display='block'; setTimeout(()=>msg.style.display='none',3000);
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXPORT — WORD (.docx)
+// ═══════════════════════════════════════════════════════════
+async function exportWord(questions) {
+  const fname=`questoes-monte-real-${new Date().toISOString().slice(0,10)}`;
+  try {
+    const {Document,Packer,Paragraph,TextRun,HeadingLevel,AlignmentType,PageBreak,BorderStyle}=window.docx;
+    const P=(children,opts={})=>new Paragraph({children,spacing:{after:120},...opts});
+    const TR=(text,opts={})=>new TextRun({text,...opts});
+    const children=[
+      P([TR('Colégio Monte Real',{bold:true,size:36,color:'1a2744'})],{alignment:AlignmentType.CENTER,spacing:{after:60}}),
+      P([TR('Questões de Ciências — Prof. Davi Gomes',{bold:true,size:28,color:'1a2744'})],{alignment:AlignmentType.CENTER,spacing:{after:60}}),
+      P([TR(`Gerado em ${new Date().toLocaleDateString('pt-BR')} · ${questions.length} questão(ões)`,{size:20,color:'888888',italics:true})],{alignment:AlignmentType.CENTER,spacing:{after:300}}),
+    ];
+    questions.forEach((q,i)=>{
+      children.push(P([TR(`${i+1}. ${q.tema||''}`,{bold:true,size:28,color:'1a2744'})],{
+        border:{bottom:{style:BorderStyle.SINGLE,size:6,color:'cccccc',space:4}},spacing:{before:300,after:120}
+      }));
+      children.push(P([TR(`${q.serie}º ano  ·  ${TL[q.tipo]||q.tipo}  ·  ${q.diff}`,{size:18,color:'666666',italics:true})]));
+      if(q.bncc) children.push(P([TR(`BNCC: ${q.bncc}`,{size:18,color:'888888',italics:true})]));
+      children.push(P([],{spacing:{after:60}}));
+      (q.questao||'').split('\n').forEach(line=>children.push(P([TR(line,{size:22})],{spacing:{after:80}})));
+      children.push(P([],{spacing:{after:200}}));
+    });
+    // Gabaritos
+    children.push(new Paragraph({children:[new PageBreak()]}));
+    children.push(P([TR('Gabaritos',{bold:true,size:36,color:'1a2744'})],{alignment:AlignmentType.CENTER,spacing:{after:300}}));
+    questions.forEach((q,i)=>{
+      if(!q.gabarito) return;
+      children.push(P([TR(`${i+1}. ${q.tema||''}`,{bold:true,size:26,color:'1a2744'})],{spacing:{before:200,after:80}}));
+      (q.gabarito).split('\n').forEach(line=>children.push(P([TR(line,{size:20})],{spacing:{after:60}})));
+    });
+    const doc=new Document({creator:'Colégio Monte Real',title:'Questões de Ciências',sections:[{properties:{},children}]});
+    const blob=await Packer.toBlob(doc);
+    dlBlob(blob,'application/vnd.openxmlformats-officedocument.wordprocessingml.document',fname+'.docx');
+  } catch(e) {
+    console.warn('docx lib error, using fallback:',e);
+    exportWordHTML(questions,fname);
+  }
+}
+
+function exportWordHTML(questions,fname) {
+  const html=`<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset="utf-8"><style>body{font-family:'Times New Roman',serif;margin:2.5cm}h1{color:#1a2744;font-size:18pt;text-align:center}h2{color:#1a2744;font-size:13pt;border-bottom:1pt solid #ccc;padding-bottom:4pt;margin-top:20pt}.meta{font-size:10pt;color:#666;font-style:italic}.qtext{font-size:12pt;line-height:1.7;white-space:pre-wrap;margin:10pt 0}.gab{background:#fdf6e3;padding:8pt;border-left:3pt solid #d4a017;margin:8pt 0}.page-break{page-break-before:always}</style></head><body>
+<h1>Colégio Monte Real</h1><h2 style="text-align:center;border:none">Questões de Ciências — Prof. Davi Gomes</h2>
+<p class="meta" style="text-align:center">Gerado em ${new Date().toLocaleDateString('pt-BR')} · ${questions.length} questão(ões)</p><hr>
+${questions.map((q,i)=>`<div><h2>${i+1}. ${q.tema||''}</h2><p class="meta">${q.serie}º ano · ${TL[q.tipo]||q.tipo} · ${q.diff}${q.bncc?' · BNCC: '+q.bncc:''}</p><div class="qtext">${(q.questao||'').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div></div>`).join('<hr style="border:0.5pt dashed #ccc">')}
+<div class="page-break"></div><h1>Gabaritos</h1>
+${questions.map((q,i)=>q.gabarito?`<div><h2>${i+1}. ${q.tema||''}</h2><div class="gab qtext">${q.gabarito.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div></div>`:'').join('')}
+</body></html>`;
+  dlBlob(new Blob([html],{type:'application/msword;charset=utf-8'}), 'application/msword', (fname||'questoes')+'.doc');
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXPORT — PDF
+// ═══════════════════════════════════════════════════════════
+function exportPDF(questions) {
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+  const PW=pdf.internal.pageSize.getWidth(), PH=pdf.internal.pageSize.getHeight();
+  const M=18, CW=PW-2*M;
+  let y=M;
+
+  const check=(h=12)=>{if(y+h>PH-M){pdf.addPage();y=M;}};
+  const setFont=(size,bold=false,color=[0,0,0])=>{
+    pdf.setFontSize(size);
+    pdf.setFont('helvetica',bold?'bold':'normal');
+    pdf.setTextColor(color[0],color[1],color[2]);
+  };
+  const addText=(text,size,bold,color,indent=0)=>{
+    setFont(size,bold,color);
+    const lines=pdf.splitTextToSize(String(text||''),CW-indent);
+    const h=lines.length*(size*0.42);
+    check(h+3);
+    pdf.text(lines,M+indent,y);
+    y+=h+2;
+  };
+  const addSpacer=(mm=4)=>{check(mm);y+=mm;};
+  const addHR=(color=[210,210,210])=>{check(4);pdf.setDrawColor(color[0],color[1],color[2]);pdf.line(M,y,PW-M,y);y+=4;};
+
+  // Header band
+  pdf.setFillColor(26,39,68);
+  pdf.rect(0,0,PW,20,'F');
+  setFont(15,true,[255,255,255]);
+  pdf.text('Colégio Monte Real — Questões de Ciências',M,12);
+  setFont(9,false,[180,180,200]);
+  pdf.text(`Prof. Davi Gomes  ·  ${new Date().toLocaleDateString('pt-BR')}  ·  ${questions.length} questão(ões)`,M,17);
+  y=28;
+
+  questions.forEach((q,i)=>{
+    addText(`${i+1}. ${q.tema||''}`,13,true,[26,39,68]);
+    addText(`${q.serie}º ano  ·  ${TL[q.tipo]||q.tipo}  ·  ${q.diff}`,9,false,[120,120,140]);
+    if(q.bncc) addText(`BNCC: ${q.bncc}`,8,false,[150,150,170]);
+    addSpacer(3);
+    (q.questao||'').split('\n').forEach(line=>{if(line.trim())addText(line,11,false,[30,30,40]);});
+    addSpacer(3);
+    addHR();
+  });
+
+  // Gabaritos page
+  pdf.addPage();y=M;
+  pdf.setFillColor(26,39,68);
+  pdf.rect(0,0,PW,14,'F');
+  setFont(14,true,[255,255,255]);
+  pdf.text('Gabaritos',M,10);
+  y=22;
+
+  questions.forEach((q,i)=>{
+    if(!q.gabarito) return;
+    addText(`${i+1}. ${q.tema||''}`,12,true,[26,39,68]);
+    q.gabarito.split('\n').forEach(line=>{if(line.trim())addText(line,10,false,[30,30,40],4);});
+    addSpacer(3);addHR([220,210,180]);
+  });
+
+  pdf.save(`questoes-monte-real-${new Date().toISOString().slice(0,10)}.pdf`);
+}
+
+function dlBlob(blob,type,filename) {
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
+}
+
+// ═══════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════
+function saveApiKey() {
+  const v=document.getElementById('api-key-input').value.trim();
+  if(!v.startsWith('sk-ant-')){showApiStatus('Chave inválida. Deve começar com sk-ant-',false);return;}
+  localStorage.setItem('cmr_apikey',v); showApiStatus('✔ Chave salva.',true);
+}
+function clearApiKey() {
+  localStorage.removeItem('cmr_apikey');
+  document.getElementById('api-key-input').value=''; showApiStatus('Chave removida.',false);
+}
+function showApiStatus(m,ok){const e=document.getElementById('api-status');e.textContent=m;e.className='api-status '+(ok?'ok':'no');}
+
+function saveFirebaseConfig() {
+  const raw=document.getElementById('fb-config-input').value.trim();
+  try {
+    const config=JSON.parse(raw);
+    if(!config.projectId) throw new Error('projectId ausente');
+    localStorage.setItem('cmr_fb_config',JSON.stringify(config));
+    const ok=initFirebase(config);
+    if(ok){
+      document.getElementById('fb-status').textContent='✔ Firebase conectado: '+config.projectId;
+      document.getElementById('fb-status').className='api-status ok';
+      updateFbBanner();
+    } else {
+      document.getElementById('fb-status').textContent='Erro ao conectar. Verifique a configuração.';
+      document.getElementById('fb-status').className='api-status no';
+    }
+  } catch(e) {
+    document.getElementById('fb-status').textContent='JSON inválido: '+e.message;
+    document.getElementById('fb-status').className='api-status no';
+  }
+}
+function clearFirebaseConfig() {
+  localStorage.removeItem('cmr_fb_config');
+  S.db=null;
+  if(unsubscribe){unsubscribe();unsubscribe=null;}
+  document.getElementById('fb-config-input').value='';
+  document.getElementById('fb-status').textContent='Desconectado.';
+  document.getElementById('fb-status').className='api-status no';
+  updateFbBanner();
+}
+function loadConfig() {
+  const k=localStorage.getItem('cmr_apikey')||'';
+  document.getElementById('api-key-input').value=k;
+  showApiStatus(k?'✔ Chave configurada.':'Nenhuma chave salva.',!!k);
+  const fc=localStorage.getItem('cmr_fb_config');
+  if(fc) {
+    document.getElementById('fb-config-input').value=JSON.stringify(JSON.parse(fc),null,2);
+    if(S.db){
+      const cfg=JSON.parse(fc);
+      document.getElementById('fb-status').textContent='✔ Firebase conectado: '+cfg.projectId;
+      document.getElementById('fb-status').className='api-status ok';
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// JSON BACKUP
+// ═══════════════════════════════════════════════════════════
+function exportJSON() {
+  const blob=new Blob([JSON.stringify(S.questions,null,2)],{type:'application/json'});
+  dlBlob(blob,'application/json',`banco-monte-real-${new Date().toISOString().slice(0,10)}.json`);
+}
+async function importJSON(e) {
+  const file=e.target.files[0]; if(!file||!S.db) return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    try {
+      const data=JSON.parse(ev.target.result); if(!Array.isArray(data)) throw new Error();
+      const existingIds=new Set(S.questions.map(q=>q.id));
+      const toAdd=data.filter(q=>!existingIds.has(q.id));
+      await Promise.all(toAdd.map(q=>dbAdd({...q,importedAt:new Date().toISOString()})));
+      document.getElementById('config-msg').innerHTML=`<span style="color:var(--green)">✔ ${toAdd.length} questão(ões) importada(s).</span>`;
+    } catch { document.getElementById('config-msg').innerHTML=`<span style="color:var(--red)">Erro ao importar.</span>`; }
+  };
+  reader.readAsText(file); e.target.value='';
+}
+
+// ═══════════════════════════════════════════════════════════
+// UTILITY
+// ═══════════════════════════════════════════════════════════
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+(function init(){
+  const fc=localStorage.getItem('cmr_fb_config');
+  if(fc){ try{initFirebase(JSON.parse(fc));}catch(e){console.error(e);} }
+  updateFbBanner();
+})();
+</script>
+</body>
+</html>
