@@ -378,16 +378,33 @@ textarea{resize:vertical;line-height:1.6}
   <div class="card">
     <div class="card-title">🔑 Provedor de IA — Chave da API</div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.1rem">
-      <div id="prov-gemini" class="prov-card active" onclick="selectProvider('gemini')">
-        <div class="prov-name">🟢 Google Gemini</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:1.1rem">
+      <div id="prov-groq" class="prov-card active" onclick="selectProvider('groq')">
+        <div class="prov-name">🟢 Groq</div>
         <div class="prov-tag free">GRATUITO</div>
-        <div class="prov-desc">1.500 questões/dia grátis.<br>Não precisa de cartão.</div>
+        <div class="prov-desc">Sem cartão. Sem limite diário preocupante. Llama 3.3 70B.</div>
+      </div>
+      <div id="prov-gemini" class="prov-card" onclick="selectProvider('gemini')">
+        <div class="prov-name">🔵 Google Gemini</div>
+        <div class="prov-tag free">GRATUITO*</div>
+        <div class="prov-desc">*Exige cartão cadastrado no Google. Gemini 2.0 Flash.</div>
       </div>
       <div id="prov-anthropic" class="prov-card" onclick="selectProvider('anthropic')">
         <div class="prov-name">🟣 Anthropic Claude</div>
         <div class="prov-tag paid">PAGO</div>
-        <div class="prov-desc">~R$ 0,05 por questão.<br>Qualidade muito alta.</div>
+        <div class="prov-desc">~R$ 0,05 por questão. Qualidade muito alta.</div>
+      </div>
+    </div>
+
+    <!-- Groq setup -->
+    <div id="setup-groq">
+      <div style="background:var(--green-bg);border:1px solid var(--green-b);border-radius:var(--rs);padding:.75rem 1rem;margin-bottom:.9rem;font-size:13px;color:var(--green)">
+        ✅ <strong>100% gratuito, sem cartão.</strong> Acesse <a href="https://console.groq.com/keys" target="_blank" style="color:var(--green);font-weight:bold">console.groq.com/keys</a> → faça login com Google → clique em <strong>"Create API Key"</strong> → copie e cole abaixo.
+      </div>
+      <div class="api-row">
+        <input type="password" id="groq-key-input" placeholder="gsk_..."/>
+        <button class="btn-sm" onclick="saveGroqKey()">Salvar</button>
+        <button class="btn-sm" onclick="clearGroqKey()">Limpar</button>
       </div>
     </div>
 
@@ -665,15 +682,27 @@ function selectProvider(prov) {
   localStorage.setItem('cmr_provider', prov);
   document.querySelectorAll('.prov-card').forEach(c=>c.classList.remove('active'));
   document.getElementById('prov-'+prov).classList.add('active');
+  document.getElementById('setup-groq').style.display      = prov==='groq'      ? 'block' : 'none';
   document.getElementById('setup-gemini').style.display    = prov==='gemini'    ? 'block' : 'none';
   document.getElementById('setup-anthropic').style.display = prov==='anthropic' ? 'block' : 'none';
 }
-function getProvider()  { return localStorage.getItem('cmr_provider')||'gemini'; }
+function getProvider()  { return localStorage.getItem('cmr_provider')||'groq'; }
 function getActiveKey() {
   const p=getProvider();
-  return p==='gemini' ? localStorage.getItem('cmr_gemini_key')||'' : localStorage.getItem('cmr_apikey')||'';
+  if(p==='groq')      return localStorage.getItem('cmr_groq_key')||'';
+  if(p==='gemini')    return localStorage.getItem('cmr_gemini_key')||'';
+  return localStorage.getItem('cmr_apikey')||'';
 }
 
+function saveGroqKey() {
+  const v=document.getElementById('groq-key-input').value.trim();
+  if(!v.startsWith('gsk_')){showApiStatus('Chave inválida. Deve começar com gsk_',false);return;}
+  localStorage.setItem('cmr_groq_key',v); showApiStatus('✔ Chave Groq salva.',true);
+}
+function clearGroqKey() {
+  localStorage.removeItem('cmr_groq_key');
+  document.getElementById('groq-key-input').value=''; showApiStatus('Chave removida.',false);
+}
 function saveGeminiKey() {
   const v=document.getElementById('gemini-key-input').value.trim();
   if(!v.startsWith('AIza')){showApiStatus('Chave inválida. Deve começar com AIza...',false);return;}
@@ -693,15 +722,29 @@ function clearAnthropicKey() {
   document.getElementById('anthropic-key-input').value=''; showApiStatus('Chave removida.',false);
 }
 
-// ── CALL AI ────────────────────────────────────────────────
 async function callAI(systemPrompt, userPrompt) {
   const prov = getProvider();
   const key  = getActiveKey();
-  if (!key) throw new Error(prov==='gemini'
-    ? 'Chave Gemini não configurada. Acesse Configurações → obtenha em aistudio.google.com.'
-    : 'Chave Anthropic não configurada. Acesse Configurações.');
+  if (!key) throw new Error(
+    prov==='groq' ? 'Chave Groq não configurada. Acesse console.groq.com/keys' :
+    prov==='gemini' ? 'Chave Gemini não configurada.' :
+    'Chave Anthropic não configurada.'
+  );
 
-  if (prov === 'gemini') {
+  if (prov === 'groq') {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body:JSON.stringify({
+        model:'llama-3.3-70b-versatile',
+        messages:[{role:'system',content:systemPrompt},{role:'user',content:userPrompt}],
+        max_tokens:1300, temperature:0.7
+      })
+    });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.message);
+    return data.choices?.[0]?.message?.content || '';
+  } else if (prov === 'gemini') {
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
       { method:'POST', headers:{'Content-Type':'application/json'},
@@ -713,7 +756,7 @@ async function callAI(systemPrompt, userPrompt) {
       }
     );
     const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
+    if(data.error) throw new Error(data.error.message);
     return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   } else {
     const res = await fetch('https://api.anthropic.com/v1/messages',{
@@ -723,7 +766,7 @@ async function callAI(systemPrompt, userPrompt) {
         system:systemPrompt, messages:[{role:'user',content:userPrompt}] })
     });
     const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
+    if(data.error) throw new Error(data.error.message);
     return data.content.map(b=>b.text||'').join('');
   }
 }
@@ -1270,12 +1313,15 @@ function clearFirebaseConfig() {
 function loadConfig() {
   const prov = getProvider();
   selectProvider(prov);
-  const gk = localStorage.getItem('cmr_gemini_key')||'';
+  const gk = localStorage.getItem('cmr_groq_key')||'';
+  const gmk= localStorage.getItem('cmr_gemini_key')||'';
   const ak = localStorage.getItem('cmr_apikey')||'';
-  if(gk) document.getElementById('gemini-key-input').value=gk;
-  if(ak) document.getElementById('anthropic-key-input').value=ak;
-  if(prov==='gemini')    showApiStatus(gk?'✔ Chave Gemini configurada.':'Nenhuma chave Gemini salva.',!!gk);
-  else showApiStatus(ak?'✔ Chave Anthropic configurada.':'Nenhuma chave Anthropic salva.',!!ak);
+  if(gk)  document.getElementById('groq-key-input').value=gk;
+  if(gmk) document.getElementById('gemini-key-input').value=gmk;
+  if(ak)  document.getElementById('anthropic-key-input').value=ak;
+  const key = prov==='groq'?gk:prov==='gemini'?gmk:ak;
+  const labels = {groq:'Groq',gemini:'Gemini',anthropic:'Anthropic'};
+  showApiStatus(key?`✔ Chave ${labels[prov]} configurada.`:`Nenhuma chave ${labels[prov]} salva.`,!!key);
   const fc=localStorage.getItem('cmr_fb_config');
   if(fc){
     document.getElementById('fb-config-input').value=JSON.stringify(JSON.parse(fc),null,2);
