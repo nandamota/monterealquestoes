@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Monte Real — Gerador de Questões</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231a2744' rx='5'/%3E%3Crect x='1.5' y='1.5' width='29' height='29' fill='none' stroke='%23d4a017' stroke-width='1.5' rx='3.5'/%3E%3Cpath d='M16 5.5 L16 7.5 M13.5 6.5 Q16 5 18.5 6.5 Q16 8 13.5 6.5Z' fill='%23d4a017'/%3E%3Cpath d='M11 8 Q12 11 16 11 Q20 11 21 8 Q19 10 16 9.5 Q13 10 11 8Z' fill='%23d4a017'/%3E%3Crect x='14.5' y='11' width='3' height='9' fill='%23d4a017'/%3E%3Cpath d='M10 20 L14.5 20 L14.5 18 L10 18Z M17.5 20 L22 20 L22 18 L17.5 18Z' fill='%23d4a017'/%3E%3Cpath d='M10 20 L10 23 L14.5 23 L14.5 20Z M17.5 20 L17.5 23 L22 23 L22 20Z' fill='%23d4a017' opacity='.7'/%3E%3Ctext x='16' y='27.5' font-size='5.5' font-weight='bold' text-anchor='middle' fill='%23d4a017' font-family='Georgia,serif' letter-spacing='1'%3EMR%3C/text%3E%3C/svg%3E">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -250,6 +251,14 @@ textarea{resize:vertical;line-height:1.6}
         <button class="tb" data-v="parcial" onclick="tgSelect('tg-tipo','blue',this)">Parcial <span style="font-size:10px;opacity:.7">/ Aberta + fechada</span></button>
         <button class="tb" data-v="gta" onclick="tgSelect('tg-tipo','blue',this)">GTA <span style="font-size:10px;opacity:.7">/ Questão aberta</span></button>
       </div>
+      <!-- Sub-tipo parcial -->
+      <div id="parcial-subtipo" style="display:none;margin-top:.6rem;padding:.75rem;background:var(--s2);border:1px solid var(--b);border-radius:var(--rs)">
+        <label style="display:block;margin-bottom:.4rem;font-size:11px">Formato da questão parcial</label>
+        <div class="tg" id="tg-parcial">
+          <button class="tb green" data-v="aberta" onclick="tgSelect('tg-parcial','green',this)">📝 Aberta (dissertativa)</button>
+          <button class="tb" data-v="fechada" onclick="tgSelect('tg-parcial','blue',this)">🔘 Fechada (múltipla escolha)</button>
+        </div>
+      </div>
     </div>
     <div style="margin-bottom:1rem">
       <label style="display:block;margin-bottom:.4rem">Série</label>
@@ -269,7 +278,12 @@ textarea{resize:vertical;line-height:1.6}
     </div>
     <div class="form-grid">
       <div class="fg full"><label>Conteúdo / Tema *</label><input type="text" id="g-conteudo" placeholder="Ex: Sistema digestório, Lei de Ohm, Placas tectônicas..."/><p class="hint">Seja específico para melhores resultados.</p></div>
-      <div class="fg full"><label>Texto base (opcional)</label><textarea id="g-textbase" rows="3" placeholder="Cole uma notícia, trecho bíblico ou situação do cotidiano. Deixe em branco para gerar automaticamente."></textarea></div>
+      <div class="fg full"><label>Texto base (opcional)</label><textarea id="g-textbase" rows="3" placeholder="Cole um trecho de notícia, livro, situação do cotidiano — ou deixe em branco para a IA criar automaticamente."></textarea>
+        <div style="display:flex;align-items:center;gap:.5rem;margin-top:.4rem">
+          <input type="checkbox" id="incluir-ref" checked style="accent-color:var(--navy);width:14px;height:14px">
+          <label for="incluir-ref" style="font-size:12px;color:var(--t2);text-transform:none;letter-spacing:0;cursor:pointer;font-weight:normal">Incluir referência ABNT abaixo do texto base</label>
+        </div>
+      </div>
       <div class="fg full"><label>Orientações adicionais (opcional)</label><textarea id="g-orient" rows="2" placeholder="Ex: focar em João Pessoa, incluir referência bíblica..."></textarea></div>
     </div>
     <div id="fs-bar" style="display:none" class="fs-bar"><span>🧠</span><span id="fs-text"></span></div>
@@ -515,7 +529,7 @@ const S = {
   editingId: null,
   currentPage: 'gerador',
   hFilters: { status:'active', serie:'all', tipo:'all', diff:'all', origem:'all' },
-  tipo:'simulado', serie:'6', diff:'Fácil',
+  tipo:'simulado', serie:'6', diff:'Fácil', parcialTipo:'aberta',
   lastResult: null,
 };
 
@@ -615,10 +629,15 @@ function tgSelect(gid, cls, btn) {
   document.getElementById(gid).querySelectorAll('.tb')
     .forEach(b=>b.classList.remove('blue','green','amber','red'));
   btn.classList.add(cls);
-  if(gid==='tg-tipo')  S.tipo = btn.dataset.v;
-  if(gid==='tg-serie') S.serie = btn.dataset.v;
-  if(gid==='tg-diff')  S.diff = btn.dataset.v;
+  if(gid==='tg-tipo')   { S.tipo = btn.dataset.v; updateParcialSubtipo(); }
+  if(gid==='tg-serie')  S.serie = btn.dataset.v;
+  if(gid==='tg-diff')   S.diff = btn.dataset.v;
+  if(gid==='tg-parcial') S.parcialTipo = btn.dataset.v;
   updateFewshot();
+}
+function updateParcialSubtipo() {
+  const el = document.getElementById('parcial-subtipo');
+  if (el) el.style.display = S.tipo === 'parcial' ? 'block' : 'none';
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -650,20 +669,47 @@ const CONTEUDOS = {
 const BASE_SYSTEM = `Você é o Prof. Davi Gomes de Brito Carneiro, professor de Ciências do Colégio Monte Real, escola de ensino personalizado e tradição católica em João Pessoa, Paraíba. Especialista em Educação Ambiental e Sustentabilidade (IFPB). Leciona para alunos de 6º, 7º e 8º ano com bom nível acadêmico.
 
 ESTILO DE ELABORAÇÃO:
-- Sempre use texto base com fonte de referência (notícia atual, trecho bíblico, cotidiano paraibano, livro didático como MENDES, F. et al. Ciências. Unitrinus, 2022; AMABIS, J.M.; MARTHO, G.R. Biologia das Células. Moderna, 2018)
 - Use personagens com nomes nordestinos: Felipe, Gustavo, Manuela, Andolfo, Afonso, Mariana, João, Ana, Pedro, Beatriz
 - Contextualize com a realidade paraibana: Praia do Jacaré, João Pessoa, Santa Rita, Tambaú, Bessa, feiras livres, culinária regional
 - Inclua referências bíblicas ou da fé católica de forma natural e pedagógica quando pertinente
 - Linguagem clara, científica e acessível a jovens de 11-14 anos com bom nível acadêmico
 
-FORMATOS:
+ESTRUTURA OBRIGATÓRIA DO ENUNCIADO (siga exatamente esta ordem e formatação):
+
+1. TEXTO BASE: Situação-problema, notícia, trecho de livro, dado científico ou outro contexto motivador. Mínimo 2-3 frases bem desenvolvidas.
+
+2. REFERÊNCIA ABNT (se solicitada — logo abaixo do texto base, sem linha em branco entre eles): Formate EXATAMENTE conforme ABNT NBR 6023:
+   - Livro: SOBRENOME, Nome. Título em negrito ou itálico. Edição. Local: Editora, Ano.
+   - Artigo/Notícia: SOBRENOME, Nome. Título da notícia. Nome do veículo, Local, data.
+   - Site: SOBRENOME, Nome (ou NOME DO SITE). Título da página. Disponível em: <URL>. Acesso em: dia mês abrev. ano.
+   - Livro didático adaptado: MENDES, F. et al. Ciências 7º Ano do Ensino Fundamental. 2. ed. Divinópolis: Unitrinus, 2022. (Adaptado.)
+   - Se não houver referência real clara, use: Elaborado pelo autor, 2026.
+   Se referência NÃO for solicitada: omita completamente este item.
+
+3. LINHA EM BRANCO separando o contexto do comando.
+
+4. COMANDO DA QUESTÃO: Parágrafo novo começando OBRIGATORIAMENTE com um verbo no imperativo. Escolha conforme o objetivo:
+   - Identificar/Nomear: "Identifique...", "Nomeie...", "Indique...", "Aponte..."
+   - Explicar: "Explique...", "Descreva...", "Justifique...", "Caracterize..."
+   - Analisar: "Analise...", "Compare...", "Relacione...", "Discuta..."
+   - Enumerar: "Cite...", "Liste...", "Enumere..."
+   - Múltipla escolha: "Assinale a alternativa que...", "Marque a opção correta:", "Identifique a alternativa que melhor..."
+
+5. ALTERNATIVAS (apenas para questões fechadas): a) b) c) d) e) — cada uma em linha separada.
+
+FORMATOS POR TIPO:
 - Simulado: APENAS múltipla escolha, 5 alternativas (a–e), estilo ENEM
 - GTA: APENAS questão aberta/dissertativa, sem alternativas
-- Parcial: aberta ou múltipla escolha conforme o tema
+- Parcial aberta: questão dissertativa com comando que exige desenvolvimento
+- Parcial fechada: múltipla escolha com 5 alternativas (a–e)
 
 FORMATO DE SAÍDA OBRIGATÓRIO:
 ---QUESTÃO---
-[texto base com fonte + enunciado + alternativas se fechada]
+[texto base]
+[referência ABNT se solicitada]
+
+[comando da questão iniciando com verbo no imperativo]
+[alternativas se fechada]
 
 ---NÍVEL DE DIFICULDADE---
 [Fácil / Médio / Difícil — justificativa em 1 frase]
@@ -777,8 +823,9 @@ async function generateQuestion() {
   if (!conteudo) { showGenError('Informe o conteúdo ou tema da questão.'); return; }
   document.getElementById('gen-error').style.display='none';
 
-  const textbase = document.getElementById('g-textbase').value.trim();
-  const orient   = document.getElementById('g-orient').value.trim();
+  const textbase  = document.getElementById('g-textbase').value.trim();
+  const orient    = document.getElementById('g-orient').value.trim();
+  const incluirRef = document.getElementById('incluir-ref')?.checked !== false;
   const btn = document.getElementById('gen-btn');
   btn.disabled=true; btn.textContent='⟳ Gerando...';
 
@@ -788,22 +835,38 @@ async function generateQuestion() {
       + examples.map((q,i)=>`— Exemplo ${i+1} (${q.tema}):\n${q.questao}${q.gabarito?'\nGabarito: '+q.gabarito:''}`).join('\n\n---\n\n')
     : '';
 
-  const fmt = S.tipo==='simulado'?'APENAS múltipla escolha com 5 alternativas (a–e), estilo ENEM.'
-    :S.tipo==='gta'?'APENAS questão aberta/dissertativa, sem alternativas.'
-    :'Aberta ou múltipla escolha (5 alternativas), conforme o tema.';
+  // Determine format based on tipo and parcialTipo
+  let fmt, tipoLabel;
+  if (S.tipo === 'simulado') {
+    fmt = 'APENAS múltipla escolha com 5 alternativas (a–e), estilo ENEM. Comando iniciando com verbo como "Assinale" ou "Identifique a alternativa que".';
+    tipoLabel = 'Simulado';
+  } else if (S.tipo === 'gta') {
+    fmt = 'APENAS questão aberta/dissertativa, SEM alternativas. Comando iniciando com verbo dissertativo como Explique, Descreva, Analise, Relacione, Justifique, Compare.';
+    tipoLabel = 'GTA';
+  } else if (S.parcialTipo === 'fechada') {
+    fmt = 'Questão FECHADA — múltipla escolha com 5 alternativas (a–e). Comando iniciando com "Assinale", "Marque" ou "Identifique a alternativa que".';
+    tipoLabel = 'Parcial (fechada)';
+  } else {
+    fmt = 'Questão ABERTA — dissertativa, SEM alternativas. Comando iniciando com verbo dissertativo como Explique, Descreva, Analise, Relacione, Justifique, Compare, Cite, Caracterize.';
+    tipoLabel = 'Parcial (aberta)';
+  }
 
   const prov = getProvider();
-  document.getElementById('gen-result').innerHTML=`<div class="result-card"><div class="loading"><div class="spinner"></div><p>Gerando com <strong>${prov==='gemini'?'Gemini (grátis)':'Claude'}</strong> — questão <strong>${S.diff.toLowerCase()}</strong> para o <strong>${S.serie}º ano</strong>…${examples.length?`<br><span style="font-size:12px;color:var(--purple)">🧠 Usando ${examples.length} exemplo(s) do banco</span>`:''}</p></div></div>`;
+  document.getElementById('gen-result').innerHTML=`<div class="result-card"><div class="loading"><div class="spinner"></div><p>Gerando com <strong>${prov==='groq'?'Groq (grátis)':prov==='gemini'?'Gemini (grátis)':'Claude'}</strong> — questão <strong>${S.diff.toLowerCase()}</strong> para o <strong>${S.serie}º ano</strong>…${examples.length?`<br><span style="font-size:12px;color:var(--purple)">🧠 Usando ${examples.length} exemplo(s) do banco</span>`:''}</p></div></div>`;
 
   try {
-    const userMsg = `Elabore UMA questão de Ciências:
-Tipo: ${S.tipo} — ${fmt}
+    const userMsg = `Elabore UMA questão de Ciências com estas especificações:
+
+Tipo: ${tipoLabel}
+Formato: ${fmt}
 Série: ${S.serie}º ano
-Conteúdo: ${conteudo}
+Conteúdo/Tema: ${conteudo}
 Dificuldade: ${S.diff}
-${textbase?'Texto base sugerido: '+textbase:'Crie um texto base contextualizado (cotidiano paraibano, notícia atual ou referência científica/bíblica).'}
-${orient?'Orientações: '+orient:''}
-Conteúdos do ${S.serie}º ano: ${CONTEUDOS[S.serie]}`;
+Incluir referência ABNT: ${incluirRef ? 'SIM — formate a referência conforme ABNT logo abaixo do texto base' : 'NÃO — omita a referência completamente'}
+${textbase ? 'Texto base fornecido pelo professor (use ou adapte): '+textbase : 'Crie um texto base contextualizado e relevante (cotidiano paraibano, notícia atual, referência científica ou bíblica).'}
+${orient ? 'Orientações adicionais: '+orient : ''}
+
+Conteúdos do ${S.serie}º ano para referência: ${CONTEUDOS[S.serie]}`;
 
     const text = await callAI(BASE_SYSTEM + fewBlock, userMsg);
     S.lastResult = parseResult(text);
