@@ -207,6 +207,21 @@ textarea{resize:vertical;line-height:1.6}
 .empty{text-align:center;padding:3rem 1rem;color:var(--t3);font-style:italic}
 .empty-icon{font-size:36px;margin-bottom:.65rem}
 
+/* IMAGE PANEL */
+.img-panel{margin-top:.9rem;border:1px solid var(--b);border-radius:var(--r);overflow:hidden;background:var(--s)}
+.img-panel-header{padding:.65rem 1rem;background:var(--s2);border-bottom:1px solid var(--b);font-size:11px;font-weight:bold;color:var(--t2);text-transform:uppercase;letter-spacing:.07em;display:flex;align-items:center;gap:.5rem}
+.img-options{display:flex;gap:.5rem;padding:.75rem 1rem;flex-wrap:wrap;align-items:center}
+.btn-img{padding:.45rem 1rem;border:1.5px solid var(--b2);border-radius:var(--rs);background:var(--s);cursor:pointer;font-size:13px;font-family:'Georgia',serif;color:var(--t2);transition:all .15s;display:flex;align-items:center;gap:.4rem}
+.btn-img:hover{border-color:var(--navy);color:var(--navy);background:var(--s2)}
+.btn-img.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.img-display{padding:.75rem 1rem;padding-top:0}
+.img-display img{width:100%;max-height:320px;object-fit:contain;border-radius:var(--rs);border:1px solid var(--b);background:#f0f0f0}
+.img-loading{text-align:center;padding:2rem;color:var(--t3);font-style:italic;font-size:13px}
+.img-loading .spinner{margin:0 auto .5rem}
+.q-img{width:100%;max-height:200px;object-fit:contain;border-radius:var(--rs);border:1px solid var(--b);background:#f8f8f8;margin-bottom:.5rem;display:block}
+.img-regen{font-size:11px;color:var(--t3);cursor:pointer;text-decoration:underline;margin-top:.3rem;display:inline-block}
+.img-regen:hover{color:var(--navy)}
+
 /* FIREBASE STATUS BANNER */
 .fb-banner{padding:.6rem 1rem;font-size:13px;margin-bottom:.9rem;border-radius:var(--rs);display:none}
 .fb-banner.ok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-b);display:block}
@@ -285,6 +300,19 @@ textarea{resize:vertical;line-height:1.6}
         </div>
       </div>
       <div class="fg full"><label>Orientações adicionais (opcional)</label><textarea id="g-orient" rows="2" placeholder="Ex: focar em João Pessoa, incluir referência bíblica..."></textarea></div>
+    </div>
+    <div style="margin-top:.9rem">
+      <label style="display:block;margin-bottom:.4rem">Ilustração</label>
+      <div class="tg" id="tg-imagem">
+        <button class="tb green" data-v="none" onclick="tgSelect('tg-imagem','green',this)">🚫 Sem imagem</button>
+        <button class="tb" data-v="ai" onclick="tgSelect('tg-imagem','blue',this)">🎨 Gerar com IA</button>
+        <button class="tb" data-v="upload" onclick="tgSelect('tg-imagem','amber',this);document.getElementById('pre-img-upload').click()">📷 Subir minha imagem</button>
+        <input type="file" id="pre-img-upload" accept="image/*" style="display:none" onchange="handlePreImageUpload(event)"/>
+      </div>
+      <div id="pre-img-preview" style="display:none;margin-top:.5rem;display:flex;align-items:center;gap:.5rem">
+        <img id="pre-img-thumb" src="" style="max-height:80px;border-radius:var(--rs);border:1px solid var(--b);object-fit:contain"/>
+        <span class="img-regen" onclick="clearPreImage()">✕ Remover</span>
+      </div>
     </div>
     <div id="fs-bar" style="display:none" class="fs-bar"><span>🧠</span><span id="fs-text"></span></div>
     <button class="btn-primary" id="gen-btn" onclick="generateQuestion()" style="margin-top:.7rem">✦ Gerar questão</button>
@@ -529,7 +557,7 @@ const S = {
   editingId: null,
   currentPage: 'gerador',
   hFilters: { status:'active', serie:'all', tipo:'all', diff:'all', origem:'all' },
-  tipo:'simulado', serie:'6', diff:'Fácil', parcialTipo:'aberta',
+  tipo:'simulado', serie:'6', diff:'Fácil', parcialTipo:'aberta', imagemOpt:'none', preImageData:null,
   lastResult: null,
 };
 
@@ -633,6 +661,7 @@ function tgSelect(gid, cls, btn) {
   if(gid==='tg-serie')  S.serie = btn.dataset.v;
   if(gid==='tg-diff')   S.diff = btn.dataset.v;
   if(gid==='tg-parcial') S.parcialTipo = btn.dataset.v;
+  if(gid==='tg-imagem')  S.imagemOpt = btn.dataset.v;
   updateFewshot();
 }
 function updateParcialSubtipo() {
@@ -758,7 +787,64 @@ Descrição: [descrição completa]
 ---GABARITO COMENTADO---
 Resposta correta: [letra ou texto]
 Justificativa: [explicação da resposta correta]
-Análise dos distratores: [por que cada alternativa errada está errada — só para fechadas]`;
+Análise dos distratores: [por que cada alternativa errada está errada — só para fechadas]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HABILIDADES BNCC — CIÊNCIAS EF (6º, 7º, 8º ANO)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Use APENAS os códigos abaixo ao indicar a habilidade BNCC. NUNCA invente um código.
+
+6º ANO:
+EF06CI01 — Classificar misturas como homogênea ou heterogênea
+EF06CI02 — Identificar evidências de transformações químicas
+EF06CI03 — Selecionar métodos de separação de sistemas
+EF06CI04 — Associar produção de materiais sintéticos ao avanço científico
+EF06CI05 — Explicar organização básica das células
+EF06CI06 — Concluir (por ilustrações/modelos) que seres vivos são formados por células
+EF06CI07 — Justificar o papel do sistema nervoso nas ações motoras e sensitivas
+EF06CI08 — Explicar a importância da visão na percepção do mundo
+EF06CI09 — Deduzir que estrutura, sustentação e movimentação resultam da interação de sistemas
+EF06CI10 — Explicar como o sistema nervoso pode ser afetado por drogas
+EF06CI11 — Identificar camadas da Terra (crosta, manto, núcleo interno/externo)
+EF06CI12 — Identificar tipos de rocha e a formação de fósseis
+EF06CI13 — Selecionar argumentos que demonstrem a esfericidade da Terra
+EF06CI14 — Inferir movimentos da Terra a partir da sombra de um gnômon
+
+7º ANO:
+EF07CI01 — Discutir aplicação das máquinas simples ao longo da história
+EF07CI02 — Diferenciar temperatura, calor e sensação térmica
+EF07CI03 — Usar formas de propagação do calor para justificar usos cotidianos
+EF07CI04 — Avaliar o papel do equilíbrio termodinâmico para a vida
+EF07CI05 — Discutir tipos de combustível e máquinas térmicas
+EF07CI06 — Discutir mudanças econômicas e sociais com a energia a vapor
+EF07CI07 — Caracterizar ecossistemas brasileiros quanto à paisagem, fauna e flora
+EF07CI08 — Avaliar impactos de catástrofes naturais na biodiversidade
+EF07CI09 — Interpretar condições de saúde da comunidade com base em indicadores
+EF07CI10 — Argumentar sobre a importância da vacinação para a saúde pública
+EF07CI11 — Analisar o uso da tecnologia (incluindo digital) nas diferentes áreas
+EF07CI12 — Demonstrar que o ar é mistura de gases e identificar sua composição
+EF07CI13 — Descrever o mecanismo natural do efeito estufa
+EF07CI14 — Justificar a importância da camada de ozônio para a vida
+EF07CI15 — Interpretar fenômenos naturais: vulcões, terremotos e tsunamis
+EF07CI16 — Justificar o formato das costas brasileira e africana pela deriva continental
+
+8º ANO:
+EF08CI01 — Identificar e classificar fontes renováveis e não renováveis de energia
+EF08CI02 — Construir circuitos elétricos simples e identificar variáveis
+EF08CI03 — Classificar equipamentos elétricos residenciais (resistência, transformador etc.)
+EF08CI04 — Calcular consumo de eletrodomésticos a partir da potência (kWh)
+EF08CI05 — Propor ações coletivas para otimizar o uso de energia elétrica
+EF08CI06 — Discutir usinas geradoras de energia (termoelétricas, hidrelétricas, nucleares etc.)
+EF08CI07 — Comparar processos reprodutivos em plantas e animais
+EF08CI08 — Analisar transformações da puberdade (aspectos biológicos e socioculturais)
+EF08CI09 — Comparar métodos contraceptivos quanto ao modo de ação e eficácia
+EF08CI10 — Identificar sintomas, transmissão e tratamento de ISTs, incluindo HIV/Aids
+EF08CI11 — Selecionar argumentos sobre as múltiplas dimensões da sexualidade humana
+EF08CI12 — Justificar as fases da Lua por meio de modelos e observação
+EF08CI13 — Representar movimentos de rotação e translação da Terra
+EF08CI14 — Relacionar climas regionais à circulação atmosférica e oceânica
+EF08CI15 — Identificar variáveis envolvidas na previsão do tempo
+EF08CI16 — Discutir iniciativas de restabelecimento do equilíbrio ambiental`;
 
 // ── PROVIDER SELECTION ────────────────────────────────────
 function selectProvider(prov) {
@@ -909,6 +995,14 @@ Conteúdos do ${S.serie}º ano para referência: ${CONTEUDOS[S.serie]}`;
     S.lastResult = parseResult(text);
     S.lastResult.tema = conteudo;
     renderGenResult(S.lastResult, conteudo, examples.length);
+    // Handle image option chosen before generation
+    if (S.imagemOpt === 'upload' && S.preImageData) {
+      S.lastResult.imageUrl = S.preImageData;
+      S.lastResult.imageType = 'upload';
+      showGenImage(S.preImageData);
+    } else if (S.imagemOpt === 'ai') {
+      generateQuestionImage();
+    }
   } catch(e) {
     document.getElementById('gen-result').innerHTML='';
     showGenError('Erro ao gerar: '+e.message);
@@ -955,6 +1049,16 @@ function renderGenResult(r, tema, exN) {
         <button class="btn-copy" onclick="exportOneWord()">📄 Word</button>
         <button class="btn-copy" onclick="exportOnePDF()">📋 PDF</button>
       </div>
+      <div class="img-panel" id="img-panel" style="display:none">
+        <div class="img-panel-header" id="img-panel-title">🖼️ Ilustração da questão</div>
+        <div class="img-options" id="img-panel-actions">
+          <button class="btn-img" id="btn-gen-img" onclick="generateQuestionImage()">🔄 Gerar outra</button>
+          <button class="btn-img" onclick="document.getElementById('img-upload-input').click()">📷 Substituir por upload</button>
+          <input type="file" id="img-upload-input" accept="image/*" style="display:none" onchange="handleImageUpload(event)"/>
+          <button class="btn-img" onclick="clearGenImage()" style="border-color:var(--red-b);color:var(--red)">✕ Remover</button>
+        </div>
+        <div class="img-display" id="img-display"></div>
+      </div>
     </div>`;
 }
 
@@ -965,7 +1069,12 @@ async function saveGenerated() {
     tipo: S.tipo, serie: S.serie, diff: S.diff,
     tema: S.lastResult.tema || document.getElementById('g-conteudo').value.trim(),
     origem: 'ai', inBank: true, status: 'active',
+    date: new Date().toLocaleDateString('pt-BR'),
   };
+  // Only save generated-URL images (base64 uploads too large for Firestore)
+  if (data.imageType === 'upload' && data.imageUrl && data.imageUrl.length > 500000) {
+    delete data.imageUrl; delete data.imageType; // skip oversized base64
+  }
   await dbAdd(data);
   const btn=document.getElementById('save-gen-btn');
   if(btn){btn.textContent='✔ Salvo!';btn.disabled=true;}
@@ -975,6 +1084,112 @@ function copyGenResult() {
   if(!S.lastResult) return;
   const r=S.lastResult;
   navigator.clipboard.writeText([r.questao,r.bncc?'BNCC: '+r.bncc:'',r.gabarito?'GABARITO:\n'+r.gabarito:''].filter(Boolean).join('\n\n---\n\n'));
+}
+
+// ── PRE-IMAGE UPLOAD (form) ──────────────────────────────────
+function handlePreImageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { alert('Imagem muito grande. Máximo: 5 MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    S.preImageData = ev.target.result;
+    const preview = document.getElementById('pre-img-preview');
+    document.getElementById('pre-img-thumb').src = ev.target.result;
+    preview.style.display = 'flex';
+    // Mark toggle as upload
+    const tg = document.getElementById('tg-imagem');
+    tg.querySelectorAll('.tb').forEach(b => b.classList.remove('blue','green','amber','red'));
+    tg.querySelector('[data-v="upload"]').classList.add('amber');
+    S.imagemOpt = 'upload';
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+function clearPreImage() {
+  S.preImageData = null;
+  S.imagemOpt = 'none';
+  document.getElementById('pre-img-preview').style.display = 'none';
+  document.getElementById('pre-img-thumb').src = '';
+  // Reset toggle to "none"
+  const tg = document.getElementById('tg-imagem');
+  tg.querySelectorAll('.tb').forEach(b => b.classList.remove('blue','green','amber','red'));
+  tg.querySelector('[data-v="none"]').classList.add('green');
+}
+
+// ── IMAGE FUNCTIONS ───────────────────────────────────────────
+function buildImagePrompt(tema, serie) {
+  return `educational science illustration for ${serie}th grade students, topic: ${tema}, clean diagram style, colorful, no text, white background, scientific illustration`;
+}
+
+async function generateQuestionImage() {
+  if (!S.lastResult) return;
+  const btn = document.getElementById('btn-gen-img');
+  const display = document.getElementById('img-display');
+  btn.disabled = true;
+  btn.textContent = '⟳ Gerando...';
+  document.getElementById('img-panel').style.display = 'block';
+  display.innerHTML = '<div class="img-loading"><div class="spinner"></div>Gerando ilustração com IA…</div>';
+
+  const tema = S.lastResult.tema || document.getElementById('g-conteudo').value.trim();
+  const prompt = buildImagePrompt(tema, S.serie);
+  const encodedPrompt = encodeURIComponent(prompt);
+  const seed = Math.floor(Math.random() * 99999);
+  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=480&seed=${seed}&nologo=true&model=flux`;
+
+  try {
+    // Pre-load to detect errors
+    await new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = res;
+      img.onerror = () => rej(new Error('Não foi possível gerar a imagem. Tente novamente.'));
+      img.src = url;
+    });
+    S.lastResult.imageUrl = url;
+    S.lastResult.imageType = 'generated';
+    showGenImage(url);
+  } catch(e) {
+    display.innerHTML = `<div class="img-loading" style="color:var(--red)">⚠ ${e.message}</div>`;
+  }
+  btn.disabled = false;
+  btn.textContent = '🎨 Gerar ilustração com IA';
+}
+
+function handleImageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { alert('Imagem muito grande. Máximo: 5 MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    if (!S.lastResult) return;
+    S.lastResult.imageUrl = ev.target.result; // base64
+    S.lastResult.imageType = 'upload';
+    const display = document.getElementById('img-display');
+    display.style.display = 'block';
+    showGenImage(ev.target.result);
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function showGenImage(src) {
+  const panel = document.getElementById('img-panel');
+  const display = document.getElementById('img-display');
+  panel.style.display = 'block';
+  display.innerHTML = `<img src="${src}" alt="Ilustração da questão" style="width:100%;max-height:320px;object-fit:contain;border-radius:var(--rs);border:1px solid var(--b);display:block">`;
+}
+
+function clearGenImage() {
+  if (S.lastResult) { delete S.lastResult.imageUrl; delete S.lastResult.imageType; }
+  document.getElementById('img-panel').style.display = 'none';
+  document.getElementById('img-display').innerHTML = '';
+  // Reset form toggle to "none"
+  const tg = document.getElementById('tg-imagem');
+  if (tg) {
+    tg.querySelectorAll('.tb').forEach(b => b.classList.remove('blue','green','amber','red'));
+    tg.querySelector('[data-v="none"]').classList.add('green');
+    S.imagemOpt = 'none';
+  }
 }
 function exportOneWord() { if(S.lastResult) exportWord([{...S.lastResult,tipo:S.tipo,serie:S.serie,diff:S.diff,tema:S.lastResult.tema}]); }
 function exportOnePDF()  { if(S.lastResult) exportPDF([{...S.lastResult,tipo:S.tipo,serie:S.serie,diff:S.diff,tema:S.lastResult.tema}]); }
@@ -1060,6 +1275,7 @@ function renderQCard(q) {
         </div>
       </div>
       <div class="q-body" id="qbody-${q.id}">
+        ${q.imageUrl?`<img src="${q.imageUrl}" class="q-img" alt="Ilustração" loading="lazy"/>`:''}
         ${q.questao?`<div class="q-section"><div class="q-section-label">Questão</div><div class="q-text">${esc(q.questao)}</div></div>`:''}
         ${q.nivel?`<div class="q-section"><div class="q-section-label">Nível</div><div class="q-text" style="font-size:13px">${esc(q.nivel)}</div></div>`:''}
         ${q.bncc?`<div class="q-section"><div class="q-section-label">BNCC</div><div class="q-text" style="font-size:13px">${esc(q.bncc)}</div></div>`:''}
