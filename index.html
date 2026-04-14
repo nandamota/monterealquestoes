@@ -600,7 +600,14 @@ textarea{resize:vertical;line-height:1.6}
       <button class="modal-close" onclick="closeBibModal()">×</button>
     </div>
     <div class="modal-body">
-      <p style="font-size:13px;color:var(--t2);margin-bottom:1rem;line-height:1.6">Preencha os dados para gerar a referência ABNT correta. Quanto mais completo, melhor a citação.</p>
+      <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem;padding:.75rem;background:var(--blue-bg);border:1px solid var(--blue-b);border-radius:var(--rs)">
+        <div style="flex:1;min-width:200px">
+          <p style="font-size:13px;color:var(--blue);font-weight:bold;margin-bottom:.2rem">🤖 Extração automática via IA</p>
+          <p style="font-size:12px;color:var(--blue);opacity:.85;line-height:1.5">A IA lê o PDF e preenche os campos automaticamente. Você só revisa e edita se precisar.</p>
+        </div>
+        <button class="btn-modal-save" id="bm-auto-btn" onclick="autoExtractMeta()" style="white-space:nowrap;flex-shrink:0">🤖 Extrair automaticamente</button>
+      </div>
+      <div id="bm-auto-status" style="display:none;font-size:12px;padding:.5rem .75rem;border-radius:var(--rs);margin-bottom:.75rem"></div>
 
       <div class="bib-mfg">
         <label>Tipo de fonte *</label>
@@ -1089,6 +1096,102 @@ function updateBibInjectBar() {
 
 // ── BIB METADATA MODAL ───────────────────────────────────────
 let bibModalDocId = null;
+
+async function autoExtractMeta() {
+  if (!bibModalDocId) return;
+  const doc = S.biblioteca.find(d => d.id === bibModalDocId);
+  if (!doc || !doc.text) {
+    showBmStatus('Texto do documento não encontrado. Preencha manualmente.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('bm-auto-btn');
+  btn.disabled = true;
+  btn.textContent = '⟳ Extraindo…';
+  showBmStatus('Analisando o documento com IA…', 'loading');
+
+  // Send first 3000 chars of text to AI — enough to find metadata
+  const excerpt = doc.text.slice(0, 3000);
+
+  const prompt = `Analise o trecho abaixo de um documento acadêmico e extraia os metadados bibliográficos. Responda APENAS com um JSON válido, sem texto antes ou depois, sem markdown, sem backticks.
+
+Campos obrigatórios no JSON:
+{
+  "tipo": "capitulo" | "artigo" | "livro" | "site" | "relatorio",
+  "tituloCap": "título do capítulo ou artigo (string)",
+  "tituloLivro": "título do livro, periódico ou site (string)",
+  "autores": "SOBRENOME, N. M.; SOBRENOME, A. B. (formato ABNT, todos os autores)",
+  "editores": "SOBRENOME, N. M.; ... (ed.) — somente para capítulo, senão string vazia)",
+  "local": "cidade de publicação",
+  "editora": "nome da editora",
+  "ano": "ano de publicação (4 dígitos)",
+  "paginas": "ex: 29-45 ou string vazia",
+  "isbn": "ISBN, ISSN ou DOI se encontrado, senão string vazia",
+  "url": "URL se for fonte online, senão string vazia",
+  "acesso": "string vazia",
+  "colecao": "nome da coleção/série se houver, senão string vazia"
+}
+
+REGRAS:
+- Autores em CAIXA ALTA no formato SOBRENOME, Iniciais.
+- Se houver 4+ autores, liste todos mesmo assim (o sistema vai formatar depois)
+- Se um campo não for encontrado, use string vazia ""
+- tipo: use "capitulo" se for capítulo de livro, "artigo" se for artigo de revista/periódico, "livro" se for livro completo
+
+TRECHO DO DOCUMENTO:
+${excerpt}`;
+
+  try {
+    const raw = await callAI('Você é um especialista em normalização bibliográfica ABNT. Responda apenas com JSON.', prompt);
+
+    // Clean response — strip markdown fences if present
+    const cleaned = raw.replace(/```json|```/gi, '').trim();
+    const meta = JSON.parse(cleaned);
+
+    // Fill fields
+    const fieldMap = {
+      tipo:        'bm-tipo',
+      tituloCap:   'bm-titulo-cap',
+      tituloLivro: 'bm-titulo-livro',
+      autores:     'bm-autores',
+      editores:    'bm-editores',
+      local:       'bm-local',
+      editora:     'bm-editora',
+      ano:         'bm-ano',
+      paginas:     'bm-paginas',
+      isbn:        'bm-isbn',
+      url:         'bm-url',
+      acesso:      'bm-acesso',
+      colecao:     'bm-colecao',
+    };
+    Object.entries(fieldMap).forEach(([key, elId]) => {
+      const el = document.getElementById(elId);
+      if (el && meta[key] !== undefined) el.value = meta[key];
+    });
+
+    updateBibAbntPreview();
+    showBmStatus('✔ Campos preenchidos automaticamente! Revise e ajuste se necessário.', 'success');
+
+  } catch(e) {
+    console.error('autoExtract error:', e);
+    showBmStatus('Não foi possível extrair automaticamente. Preencha manualmente os campos.', 'error');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🤖 Extrair automaticamente';
+}
+
+function showBmStatus(msg, type) {
+  const el = document.getElementById('bm-auto-status');
+  if (!el) return;
+  const styles = {
+    loading: 'background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-b)',
+    success: 'background:var(--green-bg);color:var(--green);border:1px solid var(--green-b)',
+    error:   'background:var(--red-bg);color:var(--red);border:1px solid var(--red-b)',
+  };
+  el.style.cssText = (styles[type] || '') + ';display:block;font-size:12px;padding:.5rem .75rem;border-radius:var(--rs);margin-bottom:.75rem';
+  el.textContent = msg;
+}
 
 function openBibModal(docId) {
   bibModalDocId = docId;
