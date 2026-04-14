@@ -228,6 +228,17 @@ textarea{resize:vertical;line-height:1.6}
 .fb-banner.no{background:var(--red-bg);color:var(--red);border:1px solid var(--red-b);display:block}
 .fb-banner.loading{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-b);display:block}
 
+/* BIB METADATA MODAL */
+.bib-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;display:none;align-items:center;justify-content:center;padding:1rem}
+.bib-modal-overlay.open{display:flex}
+.bib-modal{background:var(--s);border-radius:var(--r);width:100%;max-width:580px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25)}
+.bib-mfg{display:flex;flex-direction:column;gap:.25rem;margin-bottom:.75rem}
+.bib-mfg label{font-size:10px;font-weight:bold;color:var(--t2);text-transform:uppercase;letter-spacing:.06em}
+.bib-mfg input,.bib-mfg textarea,.bib-mfg select{font-family:'Georgia',serif;font-size:13px;padding:.45rem .6rem;border:1px solid var(--b);border-radius:var(--rs);background:var(--s);color:var(--t)}
+.bib-mfg input:focus,.bib-mfg textarea:focus,.bib-mfg select:focus{outline:none;border-color:var(--navy)}
+.bib-abnt-preview{background:var(--gold-pale);border:1px solid #e8d08a;border-radius:var(--rs);padding:.7rem .9rem;font-size:12px;line-height:1.7;color:var(--t);margin-top:.5rem}
+.bib-abnt-label{font-size:10px;font-weight:bold;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.3rem}
+
 /* BIBLIOTECA */
 .bib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.75rem;margin-top:.9rem}
 .bib-card{background:var(--s);border:1px solid var(--b);border-radius:var(--r);padding:1.1rem;box-shadow:var(--sh);display:flex;flex-direction:column;gap:.5rem;position:relative}
@@ -581,6 +592,101 @@ textarea{resize:vertical;line-height:1.6}
   </div>
 </div>
 
+<!-- BIB METADATA MODAL -->
+<div class="bib-modal-overlay" id="bib-meta-modal">
+  <div class="bib-modal">
+    <div class="modal-header">
+      <span class="modal-title">📄 Metadados do documento</span>
+      <button class="modal-close" onclick="closeBibModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--t2);margin-bottom:1rem;line-height:1.6">Preencha os dados para gerar a referência ABNT correta. Quanto mais completo, melhor a citação.</p>
+
+      <div class="bib-mfg">
+        <label>Tipo de fonte *</label>
+        <select id="bm-tipo" onchange="updateBibAbntPreview()">
+          <option value="capitulo">Capítulo de livro / Contribuição em obra coletiva</option>
+          <option value="artigo">Artigo de periódico / Revista científica</option>
+          <option value="livro">Livro completo</option>
+          <option value="site">Site / Página web</option>
+          <option value="relatorio">Relatório / Documento institucional</option>
+        </select>
+      </div>
+
+      <div class="bib-mfg">
+        <label>Título do capítulo / artigo *</label>
+        <input type="text" id="bm-titulo-cap" placeholder="Ex: Propriedades gerais dos vírus" oninput="updateBibAbntPreview()"/>
+      </div>
+
+      <div class="bib-mfg" id="bm-livro-grupo">
+        <label>Título do livro / periódico / site *</label>
+        <input type="text" id="bm-titulo-livro" placeholder="Ex: Tópicos em Virologia" oninput="updateBibAbntPreview()"/>
+      </div>
+
+      <div class="bib-mfg">
+        <label>Autores do capítulo/artigo * <span style="font-weight:normal;color:var(--t3)">(formato: SOBRENOME, N. M.; SOBRENOME, A. B.)</span></label>
+        <textarea id="bm-autores" rows="2" placeholder="Ex: SILVA, A. S.; DELATORRE, E. O.; LEON, L. A. A." oninput="updateBibAbntPreview()"></textarea>
+      </div>
+
+      <div class="bib-mfg" id="bm-editores-grupo">
+        <label>Editores/Organizadores da obra <span style="font-weight:normal;color:var(--t3)">(somente para capítulo)</span></label>
+        <textarea id="bm-editores" rows="2" placeholder="Ex: LEMOS, E. R. S.; VILLAR, L. M.; LEON, L. A. A." oninput="updateBibAbntPreview()"></textarea>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+        <div class="bib-mfg">
+          <label>Local de publicação</label>
+          <input type="text" id="bm-local" placeholder="Ex: Rio de Janeiro" oninput="updateBibAbntPreview()"/>
+        </div>
+        <div class="bib-mfg">
+          <label>Ano *</label>
+          <input type="text" id="bm-ano" placeholder="Ex: 2023" oninput="updateBibAbntPreview()"/>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem" id="bm-paginas-grupo">
+        <div class="bib-mfg">
+          <label>Páginas</label>
+          <input type="text" id="bm-paginas" placeholder="Ex: 29-45" oninput="updateBibAbntPreview()"/>
+        </div>
+        <div class="bib-mfg">
+          <label>Editora</label>
+          <input type="text" id="bm-editora" placeholder="Ex: Editora FIOCRUZ" oninput="updateBibAbntPreview()"/>
+        </div>
+      </div>
+
+      <div class="bib-mfg" id="bm-isbn-grupo">
+        <label>ISBN / ISSN / DOI <span style="font-weight:normal;color:var(--t3)">(opcional)</span></label>
+        <input type="text" id="bm-isbn" placeholder="Ex: 978-65-5708-151-8 ou https://doi.org/..." oninput="updateBibAbntPreview()"/>
+      </div>
+
+      <div class="bib-mfg">
+        <label>URL <span style="font-weight:normal;color:var(--t3)">(para fontes online)</span></label>
+        <input type="text" id="bm-url" placeholder="https://..." oninput="updateBibAbntPreview()"/>
+      </div>
+
+      <div class="bib-mfg" id="bm-acesso-grupo">
+        <label>Data de acesso</label>
+        <input type="text" id="bm-acesso" placeholder="Ex: 14 abr. 2025" oninput="updateBibAbntPreview()"/>
+      </div>
+
+      <div class="bib-mfg">
+        <label>Coleção / Série <span style="font-weight:normal;color:var(--t3)">(opcional)</span></label>
+        <input type="text" id="bm-colecao" placeholder="Ex: BIO collection" oninput="updateBibAbntPreview()"/>
+      </div>
+
+      <div style="margin-top:.5rem">
+        <div class="bib-abnt-label">Prévia da referência ABNT</div>
+        <div class="bib-abnt-preview" id="bm-preview">Preencha os campos acima para ver a referência gerada.</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="closeBibModal()">Cancelar</button>
+      <button class="btn-modal-save" onclick="saveBibMeta()">💾 Salvar metadados</button>
+    </div>
+  </div>
+</div>
+
 <!-- EDIT MODAL -->
 <div class="modal-overlay" id="edit-modal" onclick="closeModalOutside(event)">
   <div class="modal">
@@ -871,8 +977,9 @@ async function uploadBibFile(file) {
     });
 
     document.getElementById(pid).innerHTML =
-      `<span style="color:var(--green)">✔ ${esc(file.name)} — pronto! (${pageCount} pág., ${text.split(/\s+/).length.toLocaleString()} palavras)</span>`;
-    setTimeout(()=>document.getElementById(pid)?.remove(), 5000);
+      `<span style="color:var(--green)">✔ ${esc(file.name)} — pronto! (${pageCount} pág.) <button class="btn-sm" style="font-size:11px;margin-left:.4rem" onclick="openBibModal('${docId}')">📝 Preencher referência ABNT</button></span>`;
+    // Auto-open metadata modal
+    openBibModal(docId);
 
   } catch(e) {
     console.error(e);
@@ -980,6 +1087,176 @@ function updateBibInjectBar() {
   }
 }
 
+// ── BIB METADATA MODAL ───────────────────────────────────────
+let bibModalDocId = null;
+
+function openBibModal(docId) {
+  bibModalDocId = docId;
+  const doc = S.biblioteca.find(d => d.id === docId);
+  if (!doc) return;
+
+  // Populate fields from saved meta or defaults
+  const m = doc.meta || {};
+  document.getElementById('bm-tipo').value        = m.tipo || 'capitulo';
+  document.getElementById('bm-titulo-cap').value  = m.tituloCap || '';
+  document.getElementById('bm-titulo-livro').value= m.tituloLivro || '';
+  document.getElementById('bm-autores').value      = m.autores || '';
+  document.getElementById('bm-editores').value     = m.editores || '';
+  document.getElementById('bm-local').value        = m.local || '';
+  document.getElementById('bm-ano').value          = m.ano || '';
+  document.getElementById('bm-paginas').value      = m.paginas || '';
+  document.getElementById('bm-editora').value      = m.editora || '';
+  document.getElementById('bm-isbn').value         = m.isbn || '';
+  document.getElementById('bm-url').value          = m.url || '';
+  document.getElementById('bm-acesso').value       = m.acesso || '';
+  document.getElementById('bm-colecao').value      = m.colecao || '';
+
+  updateBibAbntPreview();
+  document.getElementById('bib-meta-modal').classList.add('open');
+}
+
+function closeBibModal() {
+  document.getElementById('bib-meta-modal').classList.remove('open');
+  bibModalDocId = null;
+}
+
+function buildAbntString(m) {
+  if (!m) return '';
+  const tipo = m.tipo || 'capitulo';
+  const autores = (m.autores || '').trim();
+  const tituloCap = (m.tituloCap || '').trim();
+  const tituloLivro = (m.tituloLivro || '').trim();
+  const editores = (m.editores || '').trim();
+  const local = (m.local || '').trim();
+  const editora = (m.editora || '').trim();
+  const ano = (m.ano || '').trim();
+  const paginas = (m.paginas || '').trim();
+  const isbn = (m.isbn || '').trim();
+  const url = (m.url || '').trim();
+  const acesso = (m.acesso || '').trim();
+  const colecao = (m.colecao || '').trim();
+
+  let ref = '';
+
+  if (tipo === 'capitulo') {
+    ref = autores ? autores + '. ' : '';
+    ref += tituloCap ? tituloCap + '. ' : '';
+    ref += 'In: ';
+    ref += editores ? editores + ' (ed.). ' : '';
+    ref += tituloLivro ? tituloLivro + (url ? ' [online]' : '') + '. ' : '';
+    ref += local && editora ? local + ': ' + editora + ', ' : (local || editora ? (local||editora) + ', ' : '');
+    ref += ano ? ano : '';
+    ref += paginas ? ', pp. ' + paginas + '.' : '.';
+    ref += colecao ? ' ' + colecao + '.' : '';
+    ref += isbn ? ' ISBN: ' + isbn + '.' : '';
+    ref += url ? ' Disponível em: ' + url + '.' : '';
+    ref += acesso ? ' Acesso em: ' + acesso + '.' : '';
+
+  } else if (tipo === 'artigo') {
+    ref = autores ? autores + '. ' : '';
+    ref += tituloCap ? tituloCap + '. ' : '';
+    ref += tituloLivro ? tituloLivro + ', ' : '';
+    ref += local ? local + ', ' : '';
+    ref += ano ? ano : '';
+    ref += paginas ? ', pp. ' + paginas + '.' : '.';
+    ref += isbn ? ' ' + isbn + '.' : '';
+    ref += url ? ' Disponível em: ' + url + '.' : '';
+    ref += acesso ? ' Acesso em: ' + acesso + '.' : '';
+
+  } else if (tipo === 'livro') {
+    ref = autores ? autores + '. ' : '';
+    ref += tituloLivro ? tituloLivro + '. ' : '';
+    ref += local && editora ? local + ': ' + editora + ', ' : '';
+    ref += ano ? ano + '.' : '';
+    ref += paginas ? ' ' + paginas + ' p.' : '';
+    ref += isbn ? ' ISBN: ' + isbn + '.' : '';
+    ref += url ? ' Disponível em: ' + url + '.' : '';
+    ref += acesso ? ' Acesso em: ' + acesso + '.' : '';
+
+  } else if (tipo === 'site') {
+    ref = autores ? autores + '. ' : '';
+    ref += tituloLivro ? tituloLivro + '. ' : '';
+    ref += local ? local + ', ' : '';
+    ref += ano ? ano + '.' : '';
+    ref += url ? ' Disponível em: ' + url + '.' : '';
+    ref += acesso ? ' Acesso em: ' + acesso + '.' : '';
+
+  } else { // relatorio
+    ref = autores ? autores + '. ' : '';
+    ref += tituloLivro ? tituloLivro + '. ' : '';
+    ref += local && editora ? local + ': ' + editora + ', ' : '';
+    ref += ano ? ano + '.' : '';
+    ref += url ? ' Disponível em: ' + url + '.' : '';
+    ref += acesso ? ' Acesso em: ' + acesso + '.' : '';
+  }
+
+  return ref.trim();
+}
+
+function updateBibAbntPreview() {
+  const tipo = document.getElementById('bm-tipo').value;
+  // Show/hide editor fields based on type
+  const showEdit = ['capitulo'].includes(tipo);
+  const showPages = ['capitulo','artigo','livro'].includes(tipo);
+  const showIsbn = ['capitulo','artigo','livro'].includes(tipo);
+  document.getElementById('bm-editores-grupo').style.display = showEdit ? 'block' : 'none';
+  document.getElementById('bm-paginas-grupo').style.display = showPages ? 'grid' : 'none';
+  document.getElementById('bm-isbn-grupo').style.display = showIsbn ? 'block' : 'none';
+  document.getElementById('bm-acesso-grupo').style.display = ['site','artigo','capitulo'].includes(tipo) ? 'block' : 'none';
+
+  const tituloLivroLabel = {
+    capitulo: 'Título do livro *',
+    artigo: 'Nome do periódico / revista *',
+    livro: 'Título do livro *',
+    site: 'Título da página / site *',
+    relatorio: 'Título do documento *'
+  };
+  const lblEl = document.querySelector('#bm-livro-grupo label');
+  if (lblEl) lblEl.textContent = tituloLivroLabel[tipo] || 'Título *';
+
+  const m = {
+    tipo,
+    tituloCap:   document.getElementById('bm-titulo-cap').value,
+    tituloLivro: document.getElementById('bm-titulo-livro').value,
+    autores:     document.getElementById('bm-autores').value,
+    editores:    document.getElementById('bm-editores').value,
+    local:       document.getElementById('bm-local').value,
+    ano:         document.getElementById('bm-ano').value,
+    paginas:     document.getElementById('bm-paginas').value,
+    editora:     document.getElementById('bm-editora').value,
+    isbn:        document.getElementById('bm-isbn').value,
+    url:         document.getElementById('bm-url').value,
+    acesso:      document.getElementById('bm-acesso').value,
+    colecao:     document.getElementById('bm-colecao').value,
+  };
+  const preview = document.getElementById('bm-preview');
+  const abnt = buildAbntString(m);
+  preview.textContent = abnt || 'Preencha os campos acima para ver a referência gerada.';
+}
+
+async function saveBibMeta() {
+  if (!bibModalDocId) return;
+  const tipo = document.getElementById('bm-tipo').value;
+  const meta = {
+    tipo,
+    tituloCap:   document.getElementById('bm-titulo-cap').value.trim(),
+    tituloLivro: document.getElementById('bm-titulo-livro').value.trim(),
+    autores:     document.getElementById('bm-autores').value.trim(),
+    editores:    document.getElementById('bm-editores').value.trim(),
+    local:       document.getElementById('bm-local').value.trim(),
+    ano:         document.getElementById('bm-ano').value.trim(),
+    paginas:     document.getElementById('bm-paginas').value.trim(),
+    editora:     document.getElementById('bm-editora').value.trim(),
+    isbn:        document.getElementById('bm-isbn').value.trim(),
+    url:         document.getElementById('bm-url').value.trim(),
+    acesso:      document.getElementById('bm-acesso').value.trim(),
+    colecao:     document.getElementById('bm-colecao').value.trim(),
+  };
+  const abnt = buildAbntString(meta);
+  await dbBibUpdate(bibModalDocId, { meta, abnt });
+  closeBibModal();
+}
+
 function getBibContext(serie, tema, maxChars=4000) {
   // First try matching serie, then fall back to all docs if none found
   let docs = S.biblioteca.filter(d =>
@@ -1015,7 +1292,11 @@ function getBibContext(serie, tema, maxChars=4000) {
     // Find ALL keyword positions, pick the richest window
     const excerpt = findRichestExcerpt(doc.text, keywords, charsPerDoc);
     if (excerpt) {
-      context += `\n\n[Fonte: ${doc.name}]\n${excerpt}`;
+      // Pass the ABNT reference directly if available — AI must use it verbatim
+      const refAbnt = doc.abnt
+        ? `\nReferência ABNT (USE EXATAMENTE ESTA, sem alterar): ${doc.abnt}`
+        : `\nNome do documento: ${doc.name}`;
+      context += `\n\n[Documento: ${doc.name}]${refAbnt}\n\nTrecho:\n${excerpt}`;
     }
   }
   return context.slice(0, maxChars);
