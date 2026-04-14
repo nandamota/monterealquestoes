@@ -228,6 +228,22 @@ textarea{resize:vertical;line-height:1.6}
 .fb-banner.no{background:var(--red-bg);color:var(--red);border:1px solid var(--red-b);display:block}
 .fb-banner.loading{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-b);display:block}
 
+/* DOC SELECTOR */
+.doc-selector{margin-top:.65rem;border:1px solid var(--b);border-radius:var(--rs);overflow:hidden;display:none}
+.doc-selector-header{padding:.5rem .8rem;background:var(--s2);font-size:11px;font-weight:bold;color:var(--t2);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between}
+.doc-selector-list{max-height:220px;overflow-y:auto}
+.doc-sel-item{display:flex;align-items:flex-start;gap:.6rem;padding:.6rem .8rem;border-bottom:1px solid var(--b);cursor:pointer;transition:background .1s}
+.doc-sel-item:last-child{border-bottom:none}
+.doc-sel-item:hover{background:var(--s2)}
+.doc-sel-item.selected{background:#f0f6ff;border-left:3px solid var(--blue-b)}
+.doc-sel-item.selected:hover{background:#e8f0ff}
+.doc-sel-check{width:15px;height:15px;accent-color:var(--navy);flex-shrink:0;margin-top:2px}
+.doc-sel-info{flex:1;min-width:0}
+.doc-sel-name{font-size:13px;color:var(--t);font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-sel-abnt{font-size:11px;color:var(--t3);line-height:1.4;margin-top:.15rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.doc-sel-score{font-size:10px;padding:1px 6px;border-radius:20px;flex-shrink:0;margin-top:2px}
+.doc-sel-none{padding:1.2rem;text-align:center;font-size:13px;color:var(--t3);font-style:italic}
+
 /* BIB METADATA MODAL */
 .bib-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;display:none;align-items:center;justify-content:center;padding:1rem}
 .bib-modal-overlay.open{display:flex}
@@ -324,7 +340,7 @@ textarea{resize:vertical;line-height:1.6}
       </div>
     </div>
     <div class="form-grid">
-      <div class="fg full"><label>Conteúdo / Tema *</label><input type="text" id="g-conteudo" placeholder="Ex: Sistema digestório, Lei de Ohm, Placas tectônicas..."/><p class="hint">Seja específico para melhores resultados.</p></div>
+      <div class="fg full"><label>Conteúdo / Tema *</label><input type="text" id="g-conteudo" placeholder="Ex: Sistema digestório, Lei de Ohm, Placas tectônicas..." oninput="updateDocSelector()"/><p class="hint">Seja específico para melhores resultados.</p></div>
       <div class="fg full"><label>Texto base (opcional)</label><textarea id="g-textbase" rows="3" placeholder="Cole um trecho de notícia, livro, situação do cotidiano — ou deixe em branco para a IA criar automaticamente."></textarea>
         <div style="margin-top:.6rem">
           <label style="display:block;margin-bottom:.35rem;font-size:11px;font-weight:bold;color:var(--t2);text-transform:uppercase;letter-spacing:.06em">Fonte de referência</label>
@@ -334,6 +350,17 @@ textarea{resize:vertical;line-height:1.6}
             <button class="tb" data-v="biblioteca" onclick="tgSelect('tg-fonte','amber',this)">📄 Minha biblioteca</button>
           </div>
           <p class="hint" id="fonte-hint" style="margin-top:.3rem">Usando os livros didáticos padrão da escola como referência ABNT.</p>
+
+          <!-- Doc selector — shown when fonteOpt=biblioteca -->
+          <div class="doc-selector" id="doc-selector">
+            <div class="doc-selector-header">
+              <span>📄 Selecione os documentos para esta questão</span>
+              <span id="doc-sel-count" style="font-weight:normal;color:var(--t3)">0 selecionados</span>
+            </div>
+            <div class="doc-selector-list" id="doc-sel-list">
+              <div class="doc-sel-none">Digite o tema da questão para ver os documentos relevantes.</div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="fg full"><label>Orientações adicionais (opcional)</label><textarea id="g-orient" rows="2" placeholder="Ex: focar em João Pessoa, incluir referência bíblica..."></textarea></div>
@@ -756,7 +783,7 @@ const S = {
   editingId: null,
   currentPage: 'gerador',
   hFilters: { status:'active', serie:'all', tipo:'all', diff:'all', origem:'all' },
-  tipo:'simulado', serie:'6', diff:'Fácil', parcialTipo:'aberta', fonteOpt:'livros', imagemOpt:'none', preImageData:null, refImageData:null, refImageMime:'image/jpeg',
+  tipo:'simulado', serie:'6', diff:'Fácil', parcialTipo:'aberta', fonteOpt:'livros', selectedBibDocs: new Set(), imagemOpt:'none', preImageData:null, refImageData:null, refImageMime:'image/jpeg',
   biblioteca: [], bibFilter: {serie:'all'},
   lastResult: null,
 };
@@ -868,14 +895,18 @@ function tgSelect(gid, cls, btn) {
   if(gid==='tg-parcial') S.parcialTipo = btn.dataset.v;
   if(gid==='tg-fonte') {
     S.fonteOpt = btn.dataset.v;
+    S.selectedBibDocs = new Set();
     const hints = {
       none: 'Nenhuma referência ABNT será incluída na questão.',
       livros: 'Usando os livros didáticos padrão da escola como referência ABNT.',
-      biblioteca: 'Usando os documentos da sua biblioteca como referência ABNT.'
+      biblioteca: 'Selecione abaixo quais documentos usar nesta questão.'
     };
     const h = document.getElementById('fonte-hint');
     if (h) h.textContent = hints[S.fonteOpt] || '';
+    const sel = document.getElementById('doc-selector');
+    if (sel) sel.style.display = S.fonteOpt === 'biblioteca' ? 'block' : 'none';
     updateBibInjectBar();
+    updateDocSelector();
     return;
   }
   if(gid==='tg-imagem') {
@@ -1087,11 +1118,80 @@ function updateBibInjectBar() {
   const ready = S.biblioteca.filter(d => d.status === 'ready');
   if (S.fonteOpt === 'biblioteca' && ready.length > 0) {
     bar.style.display = 'flex';
-    document.getElementById('bib-inject-count').textContent =
-      `${ready.length} documento(s) da biblioteca serão usados como referência`;
+    const n = S.selectedBibDocs && S.selectedBibDocs.size > 0
+      ? S.selectedBibDocs.size
+      : ready.length;
+    const label = S.selectedBibDocs && S.selectedBibDocs.size > 0
+      ? `${n} documento(s) selecionado(s) serão usados como referência`
+      : `${n} documento(s) da biblioteca disponíveis — nenhum selecionado ainda`;
+    document.getElementById('bib-inject-count').textContent = label;
   } else {
     bar.style.display = 'none';
   }
+}
+
+// ── DOC SELECTOR ─────────────────────────────────────────────
+function updateDocSelector() {
+  const listEl = document.getElementById('doc-sel-list');
+  if (!listEl || S.fonteOpt !== 'biblioteca') return;
+
+  const tema = (document.getElementById('g-conteudo')?.value || '').trim();
+  const readyDocs = S.biblioteca.filter(d => d.status === 'ready' && d.text);
+
+  if (!readyDocs.length) {
+    listEl.innerHTML = '<div class="doc-sel-none">Nenhum documento na biblioteca. Adicione PDFs na aba Biblioteca.</div>';
+    updateDocSelCount();
+    return;
+  }
+
+  // Score all docs by keyword relevance to tema
+  const keywords = tema.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+
+  const scored = readyDocs.map(d => {
+    let score = 0;
+    if (keywords.length && d.text) {
+      const txt = d.text.toLowerCase();
+      keywords.forEach(kw => {
+        try { score += (txt.match(new RegExp(kw, 'g')) || []).length; } catch(e) {}
+      });
+    }
+    return { ...d, score };
+  }).sort((a, b) => b.score - a.score);
+
+  listEl.innerHTML = scored.map(d => {
+    const sel = S.selectedBibDocs.has(d.id);
+    const scoreLabel = d.score > 30
+      ? `<span class="doc-sel-score" style="background:var(--green-bg);color:var(--green);border:1px solid var(--green-b)">Alta relevância</span>`
+      : d.score > 5
+      ? `<span class="doc-sel-score" style="background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-b)">Média relevância</span>`
+      : `<span class="doc-sel-score" style="background:var(--s3);color:var(--t3);border:1px solid var(--b2)">Baixa relevância</span>`;
+    const abntShort = d.abnt ? d.abnt.slice(0, 120) + (d.abnt.length > 120 ? '…' : '') : '⚠ Sem referência ABNT — preencha na Biblioteca';
+    return `
+      <div class="doc-sel-item${sel ? ' selected' : ''}" onclick="toggleDocSel('${d.id}')">
+        <input type="checkbox" class="doc-sel-check" ${sel ? 'checked' : ''} onclick="event.stopPropagation();toggleDocSel('${d.id}')"/>
+        <div class="doc-sel-info">
+          <div class="doc-sel-name">${esc(d.name)}</div>
+          <div class="doc-sel-abnt">${esc(abntShort)}</div>
+        </div>
+        ${scoreLabel}
+      </div>`;
+  }).join('');
+
+  updateDocSelCount();
+}
+
+function toggleDocSel(id) {
+  if (S.selectedBibDocs.has(id)) S.selectedBibDocs.delete(id);
+  else S.selectedBibDocs.add(id);
+  updateDocSelector();
+  updateBibInjectBar();
+}
+
+function updateDocSelCount() {
+  const el = document.getElementById('doc-sel-count');
+  if (el) el.textContent = S.selectedBibDocs.size > 0
+    ? `${S.selectedBibDocs.size} selecionado(s)`
+    : 'Nenhum selecionado — todos serão usados';
 }
 
 // ── BIB METADATA MODAL ───────────────────────────────────────
@@ -1361,13 +1461,21 @@ async function saveBibMeta() {
 }
 
 function getBibContext(serie, tema, maxChars=4000) {
-  // First try matching serie, then fall back to all docs if none found
-  let docs = S.biblioteca.filter(d =>
-    d.status === 'ready' && d.text && (d.serie === 'all' || d.serie === serie)
-  );
-  if (!docs.length) {
-    // Fallback: use all ready docs regardless of serie
-    docs = S.biblioteca.filter(d => d.status === 'ready' && d.text);
+  let docs;
+
+  // If user explicitly selected docs, use only those
+  if (S.selectedBibDocs && S.selectedBibDocs.size > 0) {
+    docs = S.biblioteca.filter(d =>
+      S.selectedBibDocs.has(d.id) && d.status === 'ready' && d.text
+    );
+  } else {
+    // No selection: use all matching serie
+    docs = S.biblioteca.filter(d =>
+      d.status === 'ready' && d.text && (d.serie === 'all' || d.serie === serie)
+    );
+    if (!docs.length) {
+      docs = S.biblioteca.filter(d => d.status === 'ready' && d.text);
+    }
   }
   if (!docs.length) return '';
 
