@@ -332,7 +332,7 @@ textarea{resize:vertical;line-height:1.6}
       </div>
 
       <!-- Painel IA: descrição + referência -->
-      <div id="img-ai-panel" style="display:none;margin-top:.65rem;background:var(--s2);border:1px solid var(--b);border-radius:var(--rs);padding:.9rem;display:flex;flex-direction:column;gap:.55rem">
+      <div id="img-ai-panel" style="display:none;margin-top:.65rem;background:var(--s2);border:1px solid var(--b);border-radius:var(--rs);padding:.9rem;flex-direction:column;gap:.55rem">
         <div class="fg" style="gap:.25rem">
           <label style="font-size:10px">Descrição da imagem <span style="font-weight:normal;color:var(--t3)">(opcional — deixe em branco para gerar automaticamente pelo tema)</span></label>
           <textarea id="img-descricao" rows="2" placeholder="Ex: diagrama do sistema digestório com setas indicando cada órgão, fundo branco, colorido..." style="font-size:13px;resize:vertical"></textarea>
@@ -350,7 +350,7 @@ textarea{resize:vertical;line-height:1.6}
       </div>
 
       <!-- Preview imagem de upload próprio -->
-      <div id="pre-img-preview" style="display:none;margin-top:.5rem;align-items:center;gap:.5rem">
+      <div id="pre-img-preview" style="display:none;margin-top:.5rem;align-items:center;gap:.5rem;flex-wrap:wrap">
         <img id="pre-img-thumb" src="" style="max-height:80px;border-radius:var(--rs);border:1px solid var(--b);object-fit:contain"/>
         <span class="img-regen" onclick="clearPreImage()">✕ Remover</span>
       </div>
@@ -1333,10 +1333,7 @@ Conteúdos do ${S.serie}º ano para referência: ${CONTEUDOS[S.serie]}`;
     // Inject biblioteca context
     const bibContext = getBibContext(S.serie, conteudo, 3000);
     const bibBlock = bibContext
-      ? '
-
-MATERIAL DE REFERÊNCIA DA BIBLIOTECA DO PROFESSOR (use como embasamento para o texto base e gabarito — cite a fonte entre parênteses quando relevante):
-' + bibContext
+      ? `\n\nMATERIAL DE REFERÊNCIA DA BIBLIOTECA DO PROFESSOR (use como embasamento para o texto base e gabarito — cite a fonte entre parênteses quando relevante):\n` + bibContext
       : '';
 
     const text = await callAI(BASE_SYSTEM + fewBlock + bibBlock, userMsg);
