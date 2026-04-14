@@ -315,9 +315,14 @@ textarea{resize:vertical;line-height:1.6}
     <div class="form-grid">
       <div class="fg full"><label>Conteúdo / Tema *</label><input type="text" id="g-conteudo" placeholder="Ex: Sistema digestório, Lei de Ohm, Placas tectônicas..."/><p class="hint">Seja específico para melhores resultados.</p></div>
       <div class="fg full"><label>Texto base (opcional)</label><textarea id="g-textbase" rows="3" placeholder="Cole um trecho de notícia, livro, situação do cotidiano — ou deixe em branco para a IA criar automaticamente."></textarea>
-        <div style="display:flex;align-items:center;gap:.5rem;margin-top:.4rem">
-          <input type="checkbox" id="incluir-ref" checked style="accent-color:var(--navy);width:14px;height:14px">
-          <label for="incluir-ref" style="font-size:12px;color:var(--t2);text-transform:none;letter-spacing:0;cursor:pointer;font-weight:normal">Incluir referência ABNT abaixo do texto base</label>
+        <div style="margin-top:.6rem">
+          <label style="display:block;margin-bottom:.35rem;font-size:11px;font-weight:bold;color:var(--t2);text-transform:uppercase;letter-spacing:.06em">Fonte de referência</label>
+          <div class="tg" id="tg-fonte">
+            <button class="tb" data-v="none" onclick="tgSelect('tg-fonte','green',this)">🚫 Sem referência</button>
+            <button class="tb green" data-v="livros" onclick="tgSelect('tg-fonte','blue',this)">📚 Livros da escola</button>
+            <button class="tb" data-v="biblioteca" onclick="tgSelect('tg-fonte','amber',this)">📄 Minha biblioteca</button>
+          </div>
+          <p class="hint" id="fonte-hint" style="margin-top:.3rem">Usando os livros didáticos padrão da escola como referência ABNT.</p>
         </div>
       </div>
       <div class="fg full"><label>Orientações adicionais (opcional)</label><textarea id="g-orient" rows="2" placeholder="Ex: focar em João Pessoa, incluir referência bíblica..."></textarea></div>
@@ -481,7 +486,7 @@ textarea{resize:vertical;line-height:1.6}
       <div class="setup-step"><span class="step-badge">2</span>No projeto, vá em <strong>Firestore Database</strong> → criar banco → modo produção.</div>
       <div class="setup-step"><span class="step-badge">3</span>Vá em <strong>Configurações do projeto</strong> → Seus apps → Adicionar app Web → copie o objeto <code>firebaseConfig</code>.</div>
       <div class="setup-step"><span class="step-badge">4</span>Em <strong>Firestore → Regras</strong>, cole: <code>allow read, write: if true;</code> (para uso pessoal).</div>
-      <div class="setup-step"><span class="step-badge">4b</span>Para a Biblioteca: vá em <strong>Storage → Começar → modo produção</strong>. Em <strong>Storage → Regras</strong>, cole: <code>allow read, write: if true;</code></div>
+
       <div class="setup-step"><span class="step-badge">5</span>Cole o JSON de configuração abaixo e salve.</div>
     </div>
     <div class="fg" style="margin-bottom:.75rem">
@@ -619,7 +624,6 @@ textarea{resize:vertical;line-height:1.6}
 <!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <!-- PDF.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(typeof pdfjsLib!=='undefined') pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
@@ -639,7 +643,7 @@ const S = {
   editingId: null,
   currentPage: 'gerador',
   hFilters: { status:'active', serie:'all', tipo:'all', diff:'all', origem:'all' },
-  tipo:'simulado', serie:'6', diff:'Fácil', parcialTipo:'aberta', imagemOpt:'none', preImageData:null, refImageData:null, refImageMime:'image/jpeg',
+  tipo:'simulado', serie:'6', diff:'Fácil', parcialTipo:'aberta', fonteOpt:'livros', imagemOpt:'none', preImageData:null, refImageData:null, refImageMime:'image/jpeg',
   biblioteca: [], bibFilter: {serie:'all'},
   lastResult: null,
 };
@@ -655,7 +659,6 @@ function initFirebase(config) {
     firebase.apps.forEach(app => app.delete());
     firebase.initializeApp(config);
     S.db = firebase.firestore();
-    S.storage = firebase.storage();
     listenQuestions();
     listenBiblioteca();
     return true;
@@ -750,6 +753,18 @@ function tgSelect(gid, cls, btn) {
   if(gid==='tg-serie')  S.serie = btn.dataset.v;
   if(gid==='tg-diff')   S.diff = btn.dataset.v;
   if(gid==='tg-parcial') S.parcialTipo = btn.dataset.v;
+  if(gid==='tg-fonte') {
+    S.fonteOpt = btn.dataset.v;
+    const hints = {
+      none: 'Nenhuma referência ABNT será incluída na questão.',
+      livros: 'Usando os livros didáticos padrão da escola como referência ABNT.',
+      biblioteca: 'Usando os documentos da sua biblioteca como referência ABNT.'
+    };
+    const h = document.getElementById('fonte-hint');
+    if (h) h.textContent = hints[S.fonteOpt] || '';
+    updateBibInjectBar();
+    return;
+  }
   if(gid==='tg-imagem') {
     S.imagemOpt = btn.dataset.v;
     const aiPanel = document.getElementById('img-ai-panel');
@@ -809,11 +824,6 @@ async function dbBibUpdate(id, data) {
   await S.db.collection('biblioteca').doc(id).update(data);
 }
 async function dbBibDelete(id) {
-  // delete from storage too if storageRef exists
-  const doc = S.biblioteca.find(d=>d.id===id);
-  if (doc?.storageRef && S.storage) {
-    try { await S.storage.ref(doc.storageRef).delete(); } catch(e) {}
-  }
   await S.db.collection('biblioteca').doc(id).delete();
 }
 
@@ -829,70 +839,58 @@ function handleBibUpload(e) {
 }
 
 async function uploadBibFile(file) {
-  if (!S.db || !S.storage) { alert('Firebase não configurado.'); return; }
-  if (file.size > 20 * 1024 * 1024) { alert(`"${file.name}" é maior que 20 MB.`); return; }
+  if (!S.db) { alert('Firebase não configurado.'); return; }
+  if (file.size > 30 * 1024 * 1024) { alert(`"${file.name}" é maior que 30 MB.`); return; }
 
   const progress = document.getElementById('bib-upload-progress');
   const pid = 'prog-'+Date.now();
   progress.insertAdjacentHTML('beforeend',
     `<div id="${pid}" style="display:flex;align-items:center;gap:.6rem;padding:.45rem 0;font-size:13px;color:var(--t2)">
       <div class="spinner" style="width:16px;height:16px;border-width:2px;flex-shrink:0"></div>
-      <span>${esc(file.name)} — enviando…</span>
+      <span>${esc(file.name)} — lendo PDF…</span>
     </div>`);
 
   try {
-    // Upload to Storage
-    const storagePath = `biblioteca/${Date.now()}_${file.name}`;
-    const ref = S.storage.ref(storagePath);
-    await ref.put(file);
-    const downloadURL = await ref.getDownloadURL();
+    // Extract text locally first with PDF.js
+    const text = await extractPdfText(file, (pg, total) => {
+      const el = document.getElementById(pid);
+      if (el) el.querySelector('span').textContent = `${esc(file.name)} — extraindo texto (pág. ${pg}/${total})…`;
+    });
+    const pageCount = await getPdfPageCount(file);
 
-    // Add placeholder in Firestore
+    // Save ONLY text to Firestore (no Storage needed — no CORS issues)
     const docId = await dbBibAdd({
       name: file.name.replace(/\.pdf$/i,''),
       fileName: file.name,
-      storageRef: storagePath,
-      downloadURL,
       size: file.size,
-      status: 'processing',
-      serie: 'all',
-      text: '',
-      pageCount: 0,
-    });
-
-    document.getElementById(pid).innerHTML =
-      `<span style="color:var(--blue)">⟳ ${esc(file.name)} — extraindo texto…</span>`;
-
-    // Extract text locally with PDF.js
-    const text = await extractPdfText(file);
-    const pageCount = await getPdfPageCount(file);
-
-    await dbBibUpdate(docId, {
-      text: text.slice(0, 80000), // cap at ~80k chars
-      pageCount,
       status: 'ready',
+      serie: 'all',
+      text: text.slice(0, 100000),
+      pageCount,
       wordCount: text.split(/\s+/).length,
     });
 
     document.getElementById(pid).innerHTML =
-      `<span style="color:var(--green)">✔ ${esc(file.name)} — pronto! (${pageCount} pág.)</span>`;
-    setTimeout(()=>document.getElementById(pid)?.remove(), 4000);
+      `<span style="color:var(--green)">✔ ${esc(file.name)} — pronto! (${pageCount} pág., ${text.split(/\s+/).length.toLocaleString()} palavras)</span>`;
+    setTimeout(()=>document.getElementById(pid)?.remove(), 5000);
 
   } catch(e) {
     console.error(e);
     document.getElementById(pid).innerHTML =
       `<span style="color:var(--red)">✕ ${esc(file.name)} — erro: ${e.message}</span>`;
+    setTimeout(()=>document.getElementById(pid)?.remove(), 8000);
   }
 }
 
-async function extractPdfText(file) {
+async function extractPdfText(file, onProgress) {
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   let text = '';
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    text += content.items.map(item => item.str).join(' ') + '\n';
+    const cnt = await page.getTextContent();
+    text += cnt.items.map(item => item.str).join(' ') + '\n';
+    if (onProgress) onProgress(i, pdf.numPages);
   }
   return text.trim();
 }
@@ -952,7 +950,7 @@ function renderBiblioteca() {
         </div>
         ${excerpt ? `<div class="bib-excerpt">${esc(excerpt)}…</div>` : ''}
         <div class="bib-actions">
-          ${d.downloadURL?`<a href="${d.downloadURL}" target="_blank" class="btn-sm" style="text-decoration:none;font-size:12px">🔗 Abrir PDF</a>`:''}
+
           <button class="btn-sm" style="font-size:12px;color:var(--red)" onclick="deleteBibDoc('${d.id}')">🗑 Remover</button>
         </div>
       </div>`;
@@ -972,57 +970,73 @@ async function deleteBibDoc(id) {
 function updateBibInjectBar() {
   const bar = document.getElementById('bib-inject-bar');
   if (!bar) return;
-  const ready = S.biblioteca.filter(d=>d.status==='ready');
-  if (ready.length > 0) {
+  const ready = S.biblioteca.filter(d => d.status === 'ready');
+  if (S.fonteOpt === 'biblioteca' && ready.length > 0) {
     bar.style.display = 'flex';
     document.getElementById('bib-inject-count').textContent =
-      `📚 ${ready.length} documento(s) na biblioteca serão usados como referência`;
+      `${ready.length} documento(s) da biblioteca serão usados como referência`;
   } else {
     bar.style.display = 'none';
   }
 }
 
-function getBibContext(serie, tema, maxChars=3000) {
-  // Get docs matching serie
+function getBibContext(serie, tema, maxChars=4000) {
   const docs = S.biblioteca.filter(d => {
-    if (d.status !== 'ready') return false;
+    if (d.status !== 'ready' || !d.text) return false;
     return d.serie === 'all' || d.serie === serie;
   });
   if (!docs.length) return '';
 
-  // Score by keyword overlap with tema
-  const keywords = tema.toLowerCase().split(/\s+/).filter(w=>w.length>3);
+  const keywords = tema.toLowerCase()
+    .split(/\s+/)
+    .filter(w => w.length > 3)
+    .map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')); // escape regex
+
+  // Score each doc by keyword frequency
   const scored = docs.map(d => {
-    const txt = (d.text||'').toLowerCase();
-    const score = keywords.reduce((acc,kw)=>{
-      const count = (txt.match(new RegExp(kw,'g'))||[]).length;
-      return acc + Math.min(count,10);
+    const txt = (d.text || '').toLowerCase();
+    const score = keywords.reduce((acc, kw) => {
+      try {
+        const hits = (txt.match(new RegExp(kw, 'g')) || []).length;
+        return acc + Math.min(hits, 15);
+      } catch(e) { return acc; }
     }, 0);
     return { ...d, score };
-  }).sort((a,b)=>b.score-a.score);
+  }).sort((a, b) => b.score - a.score);
 
-  // Extract most relevant excerpt from best docs
   let context = '';
-  for (const doc of scored.slice(0,3)) {
-    if (!doc.text) continue;
-    // Find best excerpt: window around first keyword hit
-    let excerpt = findBestExcerpt(doc.text, keywords, 800);
+  const charsPerDoc = Math.floor(maxChars / Math.min(scored.length, 3));
+
+  for (const doc of scored.slice(0, 3)) {
+    // Find ALL keyword positions, pick the richest window
+    const excerpt = findRichestExcerpt(doc.text, keywords, charsPerDoc);
     if (excerpt) {
       context += `\n\n[Fonte: ${doc.name}]\n${excerpt}`;
     }
-    if (context.length >= maxChars) break;
   }
   return context.slice(0, maxChars);
 }
 
-function findBestExcerpt(text, keywords, windowSize) {
+function findRichestExcerpt(text, keywords, windowSize) {
+  if (!text) return '';
   const lower = text.toLowerCase();
-  let bestIdx = 0;
-  for (const kw of keywords) {
-    const idx = lower.indexOf(kw);
-    if (idx !== -1) { bestIdx = Math.max(0, idx - 100); break; }
+  const windowHalf = Math.floor(windowSize / 2);
+
+  // Find all hit positions
+  let bestPos = 0, bestCount = 0;
+  const step = Math.max(50, Math.floor(windowSize / 4));
+
+  for (let i = 0; i < lower.length - windowSize; i += step) {
+    const window = lower.slice(i, i + windowSize);
+    let count = 0;
+    for (const kw of keywords) {
+      try { count += (window.match(new RegExp(kw, 'g')) || []).length; } catch(e) {}
+    }
+    if (count > bestCount) { bestCount = count; bestPos = i; }
   }
-  return text.slice(bestIdx, bestIdx + windowSize).trim();
+
+  // If no keyword found, take beginning of doc (abstract/intro usually most relevant)
+  return text.slice(bestPos, bestPos + windowSize).trim();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1066,7 +1080,7 @@ BLOCO 2 — FONTE (somente se solicitada)
 
 Fonte: SOBRENOME, Nome. Título da obra. ed. Local: Editora, Ano. (Adaptado.)
 
-• Livros que você pode usar como referência:
+• Livros que você pode usar como referência ABNT (quando solicitado):
   MENDES, F. et al. Ciências [6º/7º/8º] Ano do Ensino Fundamental. 2. ed. Divinópolis: Unitrinus, 2022.
   AMABIS, J. M.; MARTHO, G. R. Biologia das Células. 4. ed. São Paulo: Moderna, 2018.
   LINHARES, S.; GEWANDSZNAJDER, F. Biologia Hoje. 3. ed. São Paulo: Ática, 2016.
@@ -1287,7 +1301,8 @@ async function generateQuestion() {
 
   const textbase  = document.getElementById('g-textbase').value.trim();
   const orient    = document.getElementById('g-orient').value.trim();
-  const incluirRef = document.getElementById('incluir-ref')?.checked !== false;
+  const fonteOpt = S.fonteOpt || 'livros'; // 'none' | 'livros' | 'biblioteca'
+  const incluirRef = fonteOpt !== 'none';
   const btn = document.getElementById('gen-btn');
   btn.disabled=true; btn.textContent='⟳ Gerando...';
 
@@ -1324,17 +1339,25 @@ Formato: ${fmt}
 Série: ${S.serie}º ano
 Conteúdo/Tema: ${conteudo}
 Dificuldade: ${S.diff}
-Incluir referência ABNT: ${incluirRef ? 'SIM — formate a referência conforme ABNT logo abaixo do texto base' : 'NÃO — omita a referência completamente'}
+Incluir referência ABNT: ${fonteOpt === 'none' ? 'NÃO — omita completamente' : 'SIM — formate conforme ABNT logo abaixo do texto base'}
 ${textbase ? 'Texto base fornecido pelo professor (use ou adapte): '+textbase : 'Crie um texto base contextualizado e relevante (cotidiano paraibano, notícia atual, referência científica ou bíblica).'}
 ${orient ? 'Orientações adicionais: '+orient : ''}
 
 Conteúdos do ${S.serie}º ano para referência: ${CONTEUDOS[S.serie]}`;
 
-    // Inject biblioteca context
-    const bibContext = getBibContext(S.serie, conteudo, 3000);
-    const bibBlock = bibContext
-      ? `\n\nMATERIAL DE REFERÊNCIA DA BIBLIOTECA DO PROFESSOR (use como embasamento para o texto base e gabarito — cite a fonte entre parênteses quando relevante):\n` + bibContext
-      : '';
+    // Inject fonte context based on user selection
+    let bibBlock = '';
+    if (fonteOpt === 'biblioteca') {
+      const bibContext = getBibContext(S.serie, conteudo, 4000);
+      if (bibContext) {
+        bibBlock = `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nMATERIAL DE REFERÊNCIA DA BIBLIOTECA DO PROFESSOR\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nINSTRUÇÕES OBRIGATÓRIAS:\n1. Use os trechos abaixo como BASE PRINCIPAL para o texto da questão.\n2. A referência ABNT DEVE ser extraída do nome indicado em [Fonte: ...] abaixo.\n3. Adapte o conteúdo ao nível do aluno, mas mantenha a fidelidade científica do material.\n4. NÃO use os livros de fallback — use apenas esta fonte.\n\nTRECHOS DISPONÍVEIS:\n` + bibContext;
+      } else {
+        bibBlock = `\n\n[ATENÇÃO: Biblioteca selecionada mas nenhum documento compatível com "${conteudo}" para ${S.serie}º ano foi encontrado. Use os livros de fallback.]`;
+      }
+    } else if (fonteOpt === 'livros') {
+      bibBlock = ''; // BASE_SYSTEM already has the books list with PRIORITY instructions removed
+    }
+    // fonteOpt === 'none': no ref, incluirRef already false
 
     const text = await callAI(BASE_SYSTEM + fewBlock + bibBlock, userMsg);
     S.lastResult = parseResult(text);
