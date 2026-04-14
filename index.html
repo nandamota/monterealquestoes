@@ -228,6 +228,26 @@ textarea{resize:vertical;line-height:1.6}
 .fb-banner.no{background:var(--red-bg);color:var(--red);border:1px solid var(--red-b);display:block}
 .fb-banner.loading{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-b);display:block}
 
+/* BIBLIOTECA */
+.bib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:.75rem;margin-top:.9rem}
+.bib-card{background:var(--s);border:1px solid var(--b);border-radius:var(--r);padding:1.1rem;box-shadow:var(--sh);display:flex;flex-direction:column;gap:.5rem;position:relative}
+.bib-card:hover{border-color:var(--b2)}
+.bib-icon{font-size:28px;text-align:center;margin-bottom:.2rem}
+.bib-name{font-size:14px;font-weight:bold;color:var(--navy);line-height:1.3;word-break:break-word}
+.bib-meta{font-size:11px;color:var(--t3);display:flex;flex-wrap:wrap;gap:.3rem;align-items:center}
+.bib-excerpt{font-size:12px;color:var(--t2);line-height:1.5;max-height:60px;overflow:hidden;mask-image:linear-gradient(to bottom,black 60%,transparent)}
+.bib-actions{display:flex;gap:.4rem;margin-top:.2rem;flex-wrap:wrap}
+.bib-status{font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid;font-weight:bold}
+.bib-ok{background:var(--green-bg);color:var(--green);border-color:var(--green-b)}
+.bib-proc{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-b)}
+.bib-err{background:var(--red-bg);color:var(--red);border-color:var(--red-b)}
+.upload-drop{border:2px dashed var(--b2);border-radius:var(--r);padding:2.5rem 1rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--s2)}
+.upload-drop:hover,.upload-drop.drag{border-color:var(--navy);background:#f0f4ff}
+.upload-drop-icon{font-size:36px;margin-bottom:.5rem}
+.upload-drop p{font-size:14px;color:var(--t2);margin-bottom:.3rem}
+.upload-drop small{font-size:12px;color:var(--t3)}
+.bib-inject-bar{background:var(--purple-bg);border:1px solid var(--purple-b);border-radius:var(--rs);padding:.5rem .9rem;font-size:12px;color:var(--purple);display:flex;align-items:center;gap:.4rem;margin-bottom:.7rem}
+
 @media(max-width:720px){
   .hist-layout{grid-template-columns:1fr}
   .manual-card{position:static}
@@ -247,6 +267,7 @@ textarea{resize:vertical;line-height:1.6}
       <button class="nav-tab active" onclick="showPage('gerador')">Gerar questão</button>
       <button class="nav-tab" onclick="showPage('historico')">Histórico <em class="cnt" id="cnt-hist">0</em></button>
       <button class="nav-tab" onclick="showPage('banco')">Banco <em class="cnt" id="cnt-banco">0</em></button>
+      <button class="nav-tab" onclick="showPage('biblioteca')">Biblioteca <em class="cnt" id="cnt-bib">0</em></button>
       <button class="nav-tab" onclick="showPage('config')">Configurações</button>
     </div>
   </div>
@@ -305,20 +326,76 @@ textarea{resize:vertical;line-height:1.6}
       <label style="display:block;margin-bottom:.4rem">Ilustração</label>
       <div class="tg" id="tg-imagem">
         <button class="tb green" data-v="none" onclick="tgSelect('tg-imagem','green',this)">🚫 Sem imagem</button>
-        <button class="tb" data-v="ai" onclick="tgSelect('tg-imagem','blue',this)">🎨 Gerar com IA</button>
+        <button class="tb" data-v="ai" onclick="tgSelect('tg-imagem','blue',this);showImgAiPanel()">🎨 Gerar com IA</button>
         <button class="tb" data-v="upload" onclick="tgSelect('tg-imagem','amber',this);document.getElementById('pre-img-upload').click()">📷 Subir minha imagem</button>
         <input type="file" id="pre-img-upload" accept="image/*" style="display:none" onchange="handlePreImageUpload(event)"/>
       </div>
-      <div id="pre-img-preview" style="display:none;margin-top:.5rem;display:flex;align-items:center;gap:.5rem">
+
+      <!-- Painel IA: descrição + referência -->
+      <div id="img-ai-panel" style="display:none;margin-top:.65rem;background:var(--s2);border:1px solid var(--b);border-radius:var(--rs);padding:.9rem;display:flex;flex-direction:column;gap:.55rem">
+        <div class="fg" style="gap:.25rem">
+          <label style="font-size:10px">Descrição da imagem <span style="font-weight:normal;color:var(--t3)">(opcional — deixe em branco para gerar automaticamente pelo tema)</span></label>
+          <textarea id="img-descricao" rows="2" placeholder="Ex: diagrama do sistema digestório com setas indicando cada órgão, fundo branco, colorido..." style="font-size:13px;resize:vertical"></textarea>
+        </div>
+        <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
+          <button class="btn-img" onclick="document.getElementById('img-ref-input').click()" style="font-size:12px">📎 Anexar imagem de referência</button>
+          <input type="file" id="img-ref-input" accept="image/*" style="display:none" onchange="handleRefImageUpload(event)"/>
+          <span id="img-ref-label" style="font-size:12px;color:var(--t3);font-style:italic">Nenhuma referência anexada</span>
+          <span id="img-ref-clear" style="display:none">
+            <img id="img-ref-thumb" src="" style="height:40px;border-radius:4px;border:1px solid var(--b);object-fit:contain;vertical-align:middle"/>
+            <span class="img-regen" onclick="clearRefImage()" style="margin-left:.3rem">✕</span>
+          </span>
+        </div>
+        <p class="hint" style="margin:0">Se você anexar uma referência, a IA analisa o estilo e conteúdo dela para gerar uma imagem similar.</p>
+      </div>
+
+      <!-- Preview imagem de upload próprio -->
+      <div id="pre-img-preview" style="display:none;margin-top:.5rem;align-items:center;gap:.5rem">
         <img id="pre-img-thumb" src="" style="max-height:80px;border-radius:var(--rs);border:1px solid var(--b);object-fit:contain"/>
         <span class="img-regen" onclick="clearPreImage()">✕ Remover</span>
       </div>
     </div>
+    <div id="bib-inject-bar" style="display:none" class="bib-inject-bar">📚 <span id="bib-inject-count"></span></div>
     <div id="fs-bar" style="display:none" class="fs-bar"><span>🧠</span><span id="fs-text"></span></div>
     <button class="btn-primary" id="gen-btn" onclick="generateQuestion()" style="margin-top:.7rem">✦ Gerar questão</button>
     <div id="gen-error" style="display:none" class="error-box"></div>
   </div>
   <div id="gen-result"></div>
+</div>
+
+<!-- ═══ BIBLIOTECA ═══ -->
+<div class="page" id="page-biblioteca">
+  <h1 class="section-title">Biblioteca de referências</h1>
+  <p class="section-sub">PDFs salvos no Firebase Storage — usados como base para embasar as questões geradas</p>
+
+  <div id="fb-banner-bib" class="fb-banner no" style="margin-bottom:.9rem">⚠ Firebase não configurado. <a href="#" onclick="showPage('config')" style="color:inherit;font-weight:bold">Configurar agora →</a></div>
+
+  <!-- Upload area -->
+  <div class="card">
+    <div class="card-title">📤 Adicionar documento</div>
+    <div class="upload-drop" id="bib-drop" onclick="document.getElementById('bib-file-input').click()"
+         ondragover="event.preventDefault();this.classList.add('drag')"
+         ondragleave="this.classList.remove('drag')"
+         ondrop="event.preventDefault();this.classList.remove('drag');handleBibDrop(event)">
+      <div class="upload-drop-icon">📄</div>
+      <p>Clique ou arraste um PDF aqui</p>
+      <small>Livros, artigos, apostilas — máx. 20 MB por arquivo</small>
+    </div>
+    <input type="file" id="bib-file-input" accept=".pdf" multiple style="display:none" onchange="handleBibUpload(event)"/>
+    <div id="bib-upload-progress" style="margin-top:.7rem"></div>
+  </div>
+
+  <!-- Filters + list -->
+  <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.6rem;flex-wrap:wrap">
+    <span style="font-size:11px;color:var(--t3)">Série:</span>
+    <button class="fb on" data-bkey="serie" data-bval="all" onclick="setBibFilter(this)">Todas</button>
+    <button class="fb" data-bkey="serie" data-bval="6" onclick="setBibFilter(this)">6º</button>
+    <button class="fb" data-bkey="serie" data-bval="7" onclick="setBibFilter(this)">7º</button>
+    <button class="fb" data-bkey="serie" data-bval="8" onclick="setBibFilter(this)">8º</button>
+    <button class="fb" data-bkey="serie" data-bval="all3" onclick="setBibFilter(this)">6º+7º+8º</button>
+  </div>
+
+  <div id="bib-list" class="bib-grid"></div>
 </div>
 
 <!-- ═══ HISTÓRICO ═══ -->
@@ -404,6 +481,7 @@ textarea{resize:vertical;line-height:1.6}
       <div class="setup-step"><span class="step-badge">2</span>No projeto, vá em <strong>Firestore Database</strong> → criar banco → modo produção.</div>
       <div class="setup-step"><span class="step-badge">3</span>Vá em <strong>Configurações do projeto</strong> → Seus apps → Adicionar app Web → copie o objeto <code>firebaseConfig</code>.</div>
       <div class="setup-step"><span class="step-badge">4</span>Em <strong>Firestore → Regras</strong>, cole: <code>allow read, write: if true;</code> (para uso pessoal).</div>
+      <div class="setup-step"><span class="step-badge">4b</span>Para a Biblioteca: vá em <strong>Storage → Começar → modo produção</strong>. Em <strong>Storage → Regras</strong>, cole: <code>allow read, write: if true;</code></div>
       <div class="setup-step"><span class="step-badge">5</span>Cole o JSON de configuração abaixo e salve.</div>
     </div>
     <div class="fg" style="margin-bottom:.75rem">
@@ -541,6 +619,10 @@ textarea{resize:vertical;line-height:1.6}
 <!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>if(typeof pdfjsLib!=='undefined') pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 <!-- jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <!-- docx -->
@@ -557,7 +639,8 @@ const S = {
   editingId: null,
   currentPage: 'gerador',
   hFilters: { status:'active', serie:'all', tipo:'all', diff:'all', origem:'all' },
-  tipo:'simulado', serie:'6', diff:'Fácil', parcialTipo:'aberta', imagemOpt:'none', preImageData:null,
+  tipo:'simulado', serie:'6', diff:'Fácil', parcialTipo:'aberta', imagemOpt:'none', preImageData:null, refImageData:null, refImageMime:'image/jpeg',
+  biblioteca: [], bibFilter: {serie:'all'},
   lastResult: null,
 };
 
@@ -572,7 +655,9 @@ function initFirebase(config) {
     firebase.apps.forEach(app => app.delete());
     firebase.initializeApp(config);
     S.db = firebase.firestore();
+    S.storage = firebase.storage();
     listenQuestions();
+    listenBiblioteca();
     return true;
   } catch(e) {
     console.error('Firebase init error:', e);
@@ -592,6 +677,7 @@ function listenQuestions() {
       if (S.currentPage === 'historico') renderHistorico();
       if (S.currentPage === 'banco') renderBanco();
       updateFewshot();
+      updateBibInjectBar();
     }, err => console.error('Firestore error:', err));
 }
 
@@ -623,21 +709,23 @@ function showPage(pid) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+pid).classList.add('active');
-  const order=['gerador','historico','banco','config'];
+  const order=['gerador','historico','banco','biblioteca','config'];
   const tabs = document.querySelectorAll('.nav-tab');
   tabs[order.indexOf(pid)]?.classList.add('active');
   S.currentPage = pid;
   if (pid==='historico') renderHistorico();
   if (pid==='banco') renderBanco();
   if (pid==='config') loadConfig();
+  if (pid==='biblioteca') renderBiblioteca();
   updateFbBanner();
 }
 
 function updateFbBanner() {
-  const el = document.getElementById('fb-banner-gerador');
-  if (!el) return;
-  if (S.db) { el.style.display='none'; }
-  else { el.style.display='block'; }
+  ['fb-banner-gerador','fb-banner-bib'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = S.db ? 'none' : 'block';
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -648,6 +736,7 @@ function updateCounts() {
   const banco = S.questions.filter(q=>q.inBank);
   document.getElementById('cnt-hist').textContent = active.length;
   document.getElementById('cnt-banco').textContent = banco.length;
+  document.getElementById('cnt-bib').textContent = S.biblioteca.filter(d=>d.status==='ready').length;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -661,7 +750,12 @@ function tgSelect(gid, cls, btn) {
   if(gid==='tg-serie')  S.serie = btn.dataset.v;
   if(gid==='tg-diff')   S.diff = btn.dataset.v;
   if(gid==='tg-parcial') S.parcialTipo = btn.dataset.v;
-  if(gid==='tg-imagem')  S.imagemOpt = btn.dataset.v;
+  if(gid==='tg-imagem') {
+    S.imagemOpt = btn.dataset.v;
+    const aiPanel = document.getElementById('img-ai-panel');
+    if(aiPanel) aiPanel.style.display = btn.dataset.v === 'ai' ? 'flex' : 'none';
+    if(btn.dataset.v !== 'ai') clearRefImage(true);
+  }
   updateFewshot();
 }
 function updateParcialSubtipo() {
@@ -684,6 +778,251 @@ function updateFewshot() {
     el.style.display='flex';
     document.getElementById('fs-text').textContent=`Usando ${ex.length} questão(ões) do banco como referência de estilo.`;
   } else { el.style.display='none'; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// BIBLIOTECA
+// ═══════════════════════════════════════════════════════════
+let unsubBib = null;
+
+function listenBiblioteca() {
+  if (unsubBib) { unsubBib(); unsubBib = null; }
+  if (!S.db) return;
+  unsubBib = S.db.collection('biblioteca')
+    .orderBy('createdAt','desc')
+    .onSnapshot(snap => {
+      S.biblioteca = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+      updateCounts();
+      if (S.currentPage === 'biblioteca') renderBiblioteca();
+      updateBibInjectBar();
+    }, err => console.error('Bib error:', err));
+}
+
+async function dbBibAdd(data) {
+  const ref = await S.db.collection('biblioteca').add({
+    ...data,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+  return ref.id;
+}
+async function dbBibUpdate(id, data) {
+  await S.db.collection('biblioteca').doc(id).update(data);
+}
+async function dbBibDelete(id) {
+  // delete from storage too if storageRef exists
+  const doc = S.biblioteca.find(d=>d.id===id);
+  if (doc?.storageRef && S.storage) {
+    try { await S.storage.ref(doc.storageRef).delete(); } catch(e) {}
+  }
+  await S.db.collection('biblioteca').doc(id).delete();
+}
+
+// ── UPLOAD ───────────────────────────────────────────────────
+function handleBibDrop(e) {
+  const files = [...e.dataTransfer.files].filter(f=>f.type==='application/pdf');
+  if (!files.length) { alert('Apenas arquivos PDF são aceitos.'); return; }
+  files.forEach(uploadBibFile);
+}
+function handleBibUpload(e) {
+  [...e.target.files].forEach(uploadBibFile);
+  e.target.value = '';
+}
+
+async function uploadBibFile(file) {
+  if (!S.db || !S.storage) { alert('Firebase não configurado.'); return; }
+  if (file.size > 20 * 1024 * 1024) { alert(`"${file.name}" é maior que 20 MB.`); return; }
+
+  const progress = document.getElementById('bib-upload-progress');
+  const pid = 'prog-'+Date.now();
+  progress.insertAdjacentHTML('beforeend',
+    `<div id="${pid}" style="display:flex;align-items:center;gap:.6rem;padding:.45rem 0;font-size:13px;color:var(--t2)">
+      <div class="spinner" style="width:16px;height:16px;border-width:2px;flex-shrink:0"></div>
+      <span>${esc(file.name)} — enviando…</span>
+    </div>`);
+
+  try {
+    // Upload to Storage
+    const storagePath = `biblioteca/${Date.now()}_${file.name}`;
+    const ref = S.storage.ref(storagePath);
+    await ref.put(file);
+    const downloadURL = await ref.getDownloadURL();
+
+    // Add placeholder in Firestore
+    const docId = await dbBibAdd({
+      name: file.name.replace(/\.pdf$/i,''),
+      fileName: file.name,
+      storageRef: storagePath,
+      downloadURL,
+      size: file.size,
+      status: 'processing',
+      serie: 'all',
+      text: '',
+      pageCount: 0,
+    });
+
+    document.getElementById(pid).innerHTML =
+      `<span style="color:var(--blue)">⟳ ${esc(file.name)} — extraindo texto…</span>`;
+
+    // Extract text locally with PDF.js
+    const text = await extractPdfText(file);
+    const pageCount = await getPdfPageCount(file);
+
+    await dbBibUpdate(docId, {
+      text: text.slice(0, 80000), // cap at ~80k chars
+      pageCount,
+      status: 'ready',
+      wordCount: text.split(/\s+/).length,
+    });
+
+    document.getElementById(pid).innerHTML =
+      `<span style="color:var(--green)">✔ ${esc(file.name)} — pronto! (${pageCount} pág.)</span>`;
+    setTimeout(()=>document.getElementById(pid)?.remove(), 4000);
+
+  } catch(e) {
+    console.error(e);
+    document.getElementById(pid).innerHTML =
+      `<span style="color:var(--red)">✕ ${esc(file.name)} — erro: ${e.message}</span>`;
+  }
+}
+
+async function extractPdfText(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let text = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(item => item.str).join(' ') + '\n';
+  }
+  return text.trim();
+}
+
+async function getPdfPageCount(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  return pdf.numPages;
+}
+
+// ── FILTERS + RENDER ─────────────────────────────────────────
+function setBibFilter(btn) {
+  const key = btn.dataset.bkey, val = btn.dataset.bval;
+  S.bibFilter[key] = val;
+  document.querySelectorAll(`[data-bkey="${key}"]`).forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderBiblioteca();
+}
+
+function renderBiblioteca() {
+  const el = document.getElementById('bib-list');
+  if (!S.db) { el.innerHTML=''; return; }
+  const docs = S.biblioteca.filter(d => {
+    if (S.bibFilter.serie === 'all') return true;
+    if (S.bibFilter.serie === 'all3') return ['6','7','8'].includes(d.serie) || d.serie==='all';
+    return d.serie === S.bibFilter.serie || d.serie === 'all';
+  });
+  if (!docs.length) {
+    el.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📚</div>Nenhum documento ainda. Adicione PDFs acima.</div>';
+    return;
+  }
+  el.innerHTML = docs.map(d => {
+    const kb = Math.round((d.size||0)/1024);
+    const status = d.status==='ready'
+      ? '<span class="bib-status bib-ok">✔ pronto</span>'
+      : d.status==='processing'
+      ? '<span class="bib-status bib-proc">⟳ processando</span>'
+      : '<span class="bib-status bib-err">✕ erro</span>';
+    const excerpt = (d.text||'').slice(0,160).replace(/\s+/g,' ');
+    return `
+      <div class="bib-card">
+        <div class="bib-icon">📄</div>
+        <div class="bib-name">${esc(d.name)}</div>
+        <div class="bib-meta">
+          ${status}
+          ${d.pageCount?`<span>${d.pageCount} pág.</span>`:''}
+          <span>${kb} KB</span>
+        </div>
+        <div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap">
+          <label style="font-size:10px;color:var(--t3)">Série:</label>
+          <select style="font-size:12px;padding:.2rem .4rem;border:1px solid var(--b);border-radius:4px" onchange="updateBibSerie('${d.id}',this.value)">
+            <option value="all" ${d.serie==='all'?'selected':''}>Todas</option>
+            <option value="6" ${d.serie==='6'?'selected':''}>6º ano</option>
+            <option value="7" ${d.serie==='7'?'selected':''}>7º ano</option>
+            <option value="8" ${d.serie==='8'?'selected':''}>8º ano</option>
+          </select>
+        </div>
+        ${excerpt ? `<div class="bib-excerpt">${esc(excerpt)}…</div>` : ''}
+        <div class="bib-actions">
+          ${d.downloadURL?`<a href="${d.downloadURL}" target="_blank" class="btn-sm" style="text-decoration:none;font-size:12px">🔗 Abrir PDF</a>`:''}
+          <button class="btn-sm" style="font-size:12px;color:var(--red)" onclick="deleteBibDoc('${d.id}')">🗑 Remover</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function updateBibSerie(id, serie) {
+  await dbBibUpdate(id, { serie });
+}
+
+async function deleteBibDoc(id) {
+  if (!confirm('Remover este documento da biblioteca?')) return;
+  await dbBibDelete(id);
+}
+
+// ── INJECT INTO PROMPT ───────────────────────────────────────
+function updateBibInjectBar() {
+  const bar = document.getElementById('bib-inject-bar');
+  if (!bar) return;
+  const ready = S.biblioteca.filter(d=>d.status==='ready');
+  if (ready.length > 0) {
+    bar.style.display = 'flex';
+    document.getElementById('bib-inject-count').textContent =
+      `📚 ${ready.length} documento(s) na biblioteca serão usados como referência`;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function getBibContext(serie, tema, maxChars=3000) {
+  // Get docs matching serie
+  const docs = S.biblioteca.filter(d => {
+    if (d.status !== 'ready') return false;
+    return d.serie === 'all' || d.serie === serie;
+  });
+  if (!docs.length) return '';
+
+  // Score by keyword overlap with tema
+  const keywords = tema.toLowerCase().split(/\s+/).filter(w=>w.length>3);
+  const scored = docs.map(d => {
+    const txt = (d.text||'').toLowerCase();
+    const score = keywords.reduce((acc,kw)=>{
+      const count = (txt.match(new RegExp(kw,'g'))||[]).length;
+      return acc + Math.min(count,10);
+    }, 0);
+    return { ...d, score };
+  }).sort((a,b)=>b.score-a.score);
+
+  // Extract most relevant excerpt from best docs
+  let context = '';
+  for (const doc of scored.slice(0,3)) {
+    if (!doc.text) continue;
+    // Find best excerpt: window around first keyword hit
+    let excerpt = findBestExcerpt(doc.text, keywords, 800);
+    if (excerpt) {
+      context += `\n\n[Fonte: ${doc.name}]\n${excerpt}`;
+    }
+    if (context.length >= maxChars) break;
+  }
+  return context.slice(0, maxChars);
+}
+
+function findBestExcerpt(text, keywords, windowSize) {
+  const lower = text.toLowerCase();
+  let bestIdx = 0;
+  for (const kw of keywords) {
+    const idx = lower.indexOf(kw);
+    if (idx !== -1) { bestIdx = Math.max(0, idx - 100); break; }
+  }
+  return text.slice(bestIdx, bestIdx + windowSize).trim();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -991,7 +1330,16 @@ ${orient ? 'Orientações adicionais: '+orient : ''}
 
 Conteúdos do ${S.serie}º ano para referência: ${CONTEUDOS[S.serie]}`;
 
-    const text = await callAI(BASE_SYSTEM + fewBlock, userMsg);
+    // Inject biblioteca context
+    const bibContext = getBibContext(S.serie, conteudo, 3000);
+    const bibBlock = bibContext
+      ? '
+
+MATERIAL DE REFERÊNCIA DA BIBLIOTECA DO PROFESSOR (use como embasamento para o texto base e gabarito — cite a fonte entre parênteses quando relevante):
+' + bibContext
+      : '';
+
+    const text = await callAI(BASE_SYSTEM + fewBlock + bibBlock, userMsg);
     S.lastResult = parseResult(text);
     S.lastResult.tema = conteudo;
     renderGenResult(S.lastResult, conteudo, examples.length);
@@ -1087,6 +1435,11 @@ function copyGenResult() {
 }
 
 // ── PRE-IMAGE UPLOAD (form) ──────────────────────────────────
+function showImgAiPanel() {
+  const p = document.getElementById('img-ai-panel');
+  if (p) p.style.display = 'flex';
+}
+
 function handlePreImageUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -1094,10 +1447,8 @@ function handlePreImageUpload(e) {
   const reader = new FileReader();
   reader.onload = ev => {
     S.preImageData = ev.target.result;
-    const preview = document.getElementById('pre-img-preview');
     document.getElementById('pre-img-thumb').src = ev.target.result;
-    preview.style.display = 'flex';
-    // Mark toggle as upload
+    document.getElementById('pre-img-preview').style.display = 'flex';
     const tg = document.getElementById('tg-imagem');
     tg.querySelectorAll('.tb').forEach(b => b.classList.remove('blue','green','amber','red'));
     tg.querySelector('[data-v="upload"]').classList.add('amber');
@@ -1106,15 +1457,42 @@ function handlePreImageUpload(e) {
   reader.readAsDataURL(file);
   e.target.value = '';
 }
+
 function clearPreImage() {
   S.preImageData = null;
   S.imagemOpt = 'none';
   document.getElementById('pre-img-preview').style.display = 'none';
   document.getElementById('pre-img-thumb').src = '';
-  // Reset toggle to "none"
   const tg = document.getElementById('tg-imagem');
   tg.querySelectorAll('.tb').forEach(b => b.classList.remove('blue','green','amber','red'));
   tg.querySelector('[data-v="none"]').classList.add('green');
+}
+
+function handleRefImageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 4 * 1024 * 1024) { alert('Referência muito grande. Máximo: 4 MB.'); return; }
+  S.refImageMime = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = ev => {
+    S.refImageData = ev.target.result; // full data URL
+    document.getElementById('img-ref-thumb').src = ev.target.result;
+    document.getElementById('img-ref-label').style.display = 'none';
+    document.getElementById('img-ref-clear').style.display = 'inline-flex';
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function clearRefImage(silent) {
+  S.refImageData = null;
+  const label = document.getElementById('img-ref-label');
+  const clear  = document.getElementById('img-ref-clear');
+  const thumb  = document.getElementById('img-ref-thumb');
+  if (label) { label.style.display = ''; }
+  if (clear) { clear.style.display = 'none'; }
+  if (thumb) { thumb.src = ''; }
+  if (!silent) document.getElementById('img-ref-input').value = '';
 }
 
 // ── IMAGE FUNCTIONS ───────────────────────────────────────────
@@ -1126,33 +1504,115 @@ async function generateQuestionImage() {
   if (!S.lastResult) return;
   const btn = document.getElementById('btn-gen-img');
   const display = document.getElementById('img-display');
-  btn.disabled = true;
-  btn.textContent = '⟳ Gerando...';
+  if (btn) { btn.disabled = true; btn.textContent = '⟳ Gerando...'; }
   document.getElementById('img-panel').style.display = 'block';
-  display.innerHTML = '<div class="img-loading"><div class="spinner"></div>Gerando ilustração com IA…</div>';
-
-  const tema = S.lastResult.tema || document.getElementById('g-conteudo').value.trim();
-  const prompt = buildImagePrompt(tema, S.serie);
-  const encodedPrompt = encodeURIComponent(prompt);
-  const seed = Math.floor(Math.random() * 99999);
-  const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=480&seed=${seed}&nologo=true&model=flux`;
+  display.innerHTML = '<div class="img-loading"><div class="spinner"></div>Gerando ilustração…</div>';
 
   try {
-    // Pre-load to detect errors
-    await new Promise((res, rej) => {
-      const img = new Image();
-      img.onload = res;
-      img.onerror = () => rej(new Error('Não foi possível gerar a imagem. Tente novamente.'));
-      img.src = url;
-    });
+    const url = await buildAndGenerateImage();
     S.lastResult.imageUrl = url;
     S.lastResult.imageType = 'generated';
     showGenImage(url);
   } catch(e) {
     display.innerHTML = `<div class="img-loading" style="color:var(--red)">⚠ ${e.message}</div>`;
   }
-  btn.disabled = false;
-  btn.textContent = '🎨 Gerar ilustração com IA';
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 Gerar outra'; }
+}
+
+async function buildAndGenerateImage() {
+  const tema = S.lastResult?.tema || document.getElementById('g-conteudo').value.trim();
+  const customDesc = (document.getElementById('img-descricao')?.value || '').trim();
+  const refData = S.refImageData; // base64 data URL or null
+
+  let finalPrompt = '';
+
+  if (refData && getActiveKey()) {
+    // Use AI to analyze reference image and build prompt
+    display_load('Analisando imagem de referência…');
+    const base64 = refData.split(',')[1];
+    const mime = S.refImageMime || 'image/jpeg';
+    const instrucao = customDesc
+      ? `O professor quer uma ilustração educativa inspirada nesta imagem de referência para o tema "${tema}". Descrição adicional fornecida: "${customDesc}". Descreva em inglês (50 palavras máx.), para uso como prompt de geração de imagem, o estilo visual, elementos principais e composição que a imagem gerada deve ter, mantendo caráter educativo e adequado para alunos de ${S.serie}º ano.`
+      : `O professor quer uma ilustração educativa inspirada nesta imagem de referência para o tema "${tema}" (${S.serie}º ano de Ciências). Descreva em inglês (50 palavras máx.), para uso como prompt de geração de imagem, o estilo visual, elementos principais e composição desta imagem. Mantenha caráter educativo, sem texto, fundo branco.`;
+    const aiDesc = await callAIWithImage(instrucao, base64, mime);
+    finalPrompt = aiDesc.trim();
+  } else if (customDesc) {
+    finalPrompt = `educational science illustration, ${customDesc}, ${S.serie}th grade, clean style, no text, white background`;
+  } else {
+    finalPrompt = buildImagePrompt(tema, S.serie);
+  }
+
+  display_load('Gerando ilustração…');
+  const seed = Math.floor(Math.random() * 99999);
+  const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=800&height=480&seed=${seed}&nologo=true&model=flux`;
+
+  await new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = res;
+    img.onerror = () => rej(new Error('Não foi possível gerar a imagem. Verifique sua conexão e tente novamente.'));
+    img.src = url;
+  });
+  return url;
+}
+
+function display_load(msg) {
+  const d = document.getElementById('img-display');
+  if(d) d.innerHTML = `<div class="img-loading"><div class="spinner"></div>${msg}</div>`;
+}
+
+async function callAIWithImage(instruction, base64, mime) {
+  const prov = getProvider();
+  const key  = getActiveKey();
+  if (!key) return instruction; // fallback: use instruction as prompt directly
+
+  if (prov === 'anthropic') {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514', max_tokens: 150,
+        messages: [{role:'user', content:[
+          {type:'image', source:{type:'base64', media_type:mime, data:base64}},
+          {type:'text', text: instruction}
+        ]}]
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.content.map(b=>b.text||'').join('');
+
+  } else if (prov === 'gemini') {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+      { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ contents:[{parts:[
+          {inline_data:{mime_type:mime, data:base64}},
+          {text: instruction}
+        ]}], generationConfig:{maxOutputTokens:150}})
+      }
+    );
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+  } else {
+    // Groq with vision (llama-3.2-11b-vision-preview)
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body: JSON.stringify({
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        messages:[{role:'user', content:[
+          {type:'image_url', image_url:{url:`data:${mime};base64,${base64}`}},
+          {type:'text', text: instruction}
+        ]}],
+        max_tokens: 150
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    return data.choices?.[0]?.message?.content || '';
+  }
 }
 
 function handleImageUpload(e) {
@@ -1679,6 +2139,7 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
   const fc=localStorage.getItem('cmr_fb_config');
   if(fc){ try{initFirebase(JSON.parse(fc));}catch(e){console.error(e);} }
   updateFbBanner();
+  updateBibInjectBar();
 })();
 </script>
 </body>
