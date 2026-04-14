@@ -981,10 +981,14 @@ function updateBibInjectBar() {
 }
 
 function getBibContext(serie, tema, maxChars=4000) {
-  const docs = S.biblioteca.filter(d => {
-    if (d.status !== 'ready' || !d.text) return false;
-    return d.serie === 'all' || d.serie === serie;
-  });
+  // First try matching serie, then fall back to all docs if none found
+  let docs = S.biblioteca.filter(d =>
+    d.status === 'ready' && d.text && (d.serie === 'all' || d.serie === serie)
+  );
+  if (!docs.length) {
+    // Fallback: use all ready docs regardless of serie
+    docs = S.biblioteca.filter(d => d.status === 'ready' && d.text);
+  }
   if (!docs.length) return '';
 
   const keywords = tema.toLowerCase()
@@ -1019,23 +1023,22 @@ function getBibContext(serie, tema, maxChars=4000) {
 
 function findRichestExcerpt(text, keywords, windowSize) {
   if (!text) return '';
+  // If doc is shorter than window, return everything
+  if (text.length <= windowSize) return text.trim();
+
   const lower = text.toLowerCase();
-  const windowHalf = Math.floor(windowSize / 2);
-
-  // Find all hit positions
   let bestPos = 0, bestCount = 0;
-  const step = Math.max(50, Math.floor(windowSize / 4));
+  const step = Math.max(100, Math.floor(windowSize / 6));
 
-  for (let i = 0; i < lower.length - windowSize; i += step) {
-    const window = lower.slice(i, i + windowSize);
+  for (let i = 0; i <= lower.length - windowSize; i += step) {
+    const chunk = lower.slice(i, i + windowSize);
     let count = 0;
     for (const kw of keywords) {
-      try { count += (window.match(new RegExp(kw, 'g')) || []).length; } catch(e) {}
+      try { count += (chunk.match(new RegExp(kw, 'gi')) || []).length; } catch(e) {}
     }
     if (count > bestCount) { bestCount = count; bestPos = i; }
   }
 
-  // If no keyword found, take beginning of doc (abstract/intro usually most relevant)
   return text.slice(bestPos, bestPos + windowSize).trim();
 }
 
@@ -1359,7 +1362,18 @@ Conteúdos do ${S.serie}º ano para referência: ${CONTEUDOS[S.serie]}`;
     }
     // fonteOpt === 'none': no ref, incluirRef already false
 
-    const text = await callAI(BASE_SYSTEM + fewBlock + bibBlock, userMsg);
+    // When using biblioteca, strip the fallback books list from BASE_SYSTEM
+    // so the AI doesn't default to them
+    let systemPrompt = BASE_SYSTEM;
+    if (fonteOpt === 'biblioteca') {
+      // Remove the books list section so AI can't fall back to them
+      systemPrompt = BASE_SYSTEM.replace(
+        /• Livros que você pode usar como referência ABNT.*?• Se referência NÃO for solicitada/s,
+        '• Se referência NÃO for solicitada'
+      );
+    }
+
+    const text = await callAI(systemPrompt + fewBlock + bibBlock, userMsg);
     S.lastResult = parseResult(text);
     S.lastResult.tema = conteudo;
     renderGenResult(S.lastResult, conteudo, examples.length);
